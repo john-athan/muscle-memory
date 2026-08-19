@@ -85,9 +85,22 @@ requested:
 > and makes no network requests. It uses no eval and no new Function. The
 > source on GitHub is byte for byte what is in the package.
 
+### Privacy policy URL
+
+<https://john-athan.github.io/muscle-memory/privacy-policy.html>
+
+The field is on this same tab. The console asks for it whenever an item could
+collect user data, and the answer costs nothing even though this one does not:
+storing a setting on the user's own machine is not collection, but a reviewer
+should not have to take that on trust. The page is generated from `docs/` and
+deploys with the rest of the site.
+
 ### Data usage
 
-Tick **none** of the data-type checkboxes; the extension collects nothing.
+Tick **none** of the data-type checkboxes; the extension collects nothing that
+leaves the device. If one of them is ticked, the privacy policy stops being
+optional and the item is declared as collecting data it does not.
+
 Then certify all three statements, each of which is true:
 
 - I do not sell or transfer user data to third parties, outside of the approved
@@ -96,6 +109,11 @@ Then certify all three statements, each of which is true:
   item's single purpose
 - I do not use or transfer user data to determine creditworthiness or for
   lending purposes
+
+Finally tick the certification at the foot of the tab, confirming the data
+usage complies with the Developer Program Policies. The console blocks
+publishing until that box is ticked, separately from the three statements
+above, and it is easy to miss below them.
 
 ## After the first publish
 
