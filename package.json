@@ -1,0 +1,13 @@
+{
+  "name": "muscle-memory",
+  "version": "1.0.0",
+  "description": "Browser extension that gives Figma back your browser's shortcuts, a real right-click, and a wheel that scrolls the way you expect.",
+  "private": true,
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/john-athan/muscle-memory.git" },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "check": "node -e \"JSON.parse(require('fs').readFileSync('manifest.json','utf8'))\" && for f in src/*.js test/*.test.js; do node --check \"$f\" || exit 1; done && npm test",
+    "package": "rm -f muscle-memory.zip && zip -r muscle-memory.zip manifest.json src icons -x '*.DS_Store'"
+  }
+}

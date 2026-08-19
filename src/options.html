@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Muscle Memory</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="page">
+    <header class="head">
+      <h1>Muscle&nbsp;Memory</h1>
+      <p class="sub">Figma, in a browser, behaving like it knows it is in one.</p>
+    </header>
+
+    <div id="welcome" class="notice" hidden>
+      <strong>One thing before you start.</strong>
+      Figma tabs that were already open do not have the extension in them yet.
+      Reload them once and it takes effect.
+    </div>
+
+    <section class="card" aria-labelledby="h-keymap">
+      <div class="card-head">
+        <div>
+          <h2 id="h-keymap">Conventional keymap</h2>
+          <p class="lede">
+            The browser keeps every shortcut it owns, and the Figma actions that
+            lose a chord move to the one you would have guessed.
+          </p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="keymap-enabled">
+          <span class="slider" aria-hidden="true"></span>
+          <span class="switch-label">On</span>
+        </label>
+      </div>
+
+      <details class="detail">
+        <summary>Which chords, exactly <span class="count" id="rule-count"></span></summary>
+        <div class="rules" id="rules"></div>
+      </details>
+
+      <details class="detail">
+        <summary>Chords deliberately left to Figma</summary>
+        <p class="note">
+          The rule is not that the browser always wins. It is that the meaning
+          you expect wins. On a canvas these read as design commands, and the
+          browser's version of each is still reachable another way.
+        </p>
+        <div class="rules" id="keeps"></div>
+      </details>
+
+      <details class="detail">
+        <summary>Chords that were never at risk</summary>
+        <p class="note">
+          Chrome resolves these above the page, so no website can take them and
+          no extension needs to defend them. Listed so you know they were checked.
+        </p>
+        <p class="chips" id="reserved"></p>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="h-canvas">
+      <h2 id="h-canvas">Canvas</h2>
+
+      <fieldset class="field">
+        <legend>Mouse wheel</legend>
+        <label class="radio">
+          <input type="radio" name="scroll" value="figma">
+          <span><strong>Leave it to Figma</strong><small>Wheel pans, pinch zooms.</small></span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="scroll" value="zoom">
+          <span><strong>Wheel zooms</strong><small>What an external mouse expects. Shift&#8202;+&#8202;wheel pans.</small></span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="scroll" value="pan">
+          <span><strong>Wheel always pans</strong><small>Only a real trackpad pinch zooms.</small></span>
+        </label>
+      </fieldset>
+
+      <label class="check">
+        <input type="checkbox" id="right-click">
+        <span><strong>Shift&#8202;+&#8202;right-click gives the browser menu</strong>
+        <small>An ordinary right-click still opens Figma's own menu, which is worth keeping.</small></span>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" id="middle-click">
+        <span><strong>Protect middle-click panning</strong>
+        <small>Stops Chrome claiming the drag for autoscroll, and X11 for a primary-selection paste.</small></span>
+      </label>
+    </section>
+
+    <section class="card" aria-labelledby="h-declutter">
+      <h2 id="h-declutter">Interface noise</h2>
+      <p class="lede">
+        Matched on the wording of each banner rather than on class names, so a
+        Figma redesign makes one stop working rather than making it hide the
+        wrong thing.
+      </p>
+      <div id="declutter"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-diag">
+      <h2 id="h-diag">Diagnostics</h2>
+      <p class="lede">
+        Moving an action to a new chord means pressing the old one on your
+        behalf, and a synthesised keystroke is one an application may ignore.
+        Rather than assume, the extension measures whether Figma acted, and
+        reports it here.
+      </p>
+      <div id="health" class="health">Nothing measured yet. The counter fills in once a rehomed chord is used.</div>
+    </section>
+
+    <footer class="foot">
+      <span id="version"></span>
+      <a href="https://github.com/john-athan/muscle-memory">Source and issues</a>
+      <button type="button" id="reset" class="link-btn">Reset everything</button>
+    </footer>
+  </main>
+
+  <script src="keymap.js"></script>
+  <script src="settings.js"></script>
+  <script src="selectors.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Muscle Memory privacy policy</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--card:#fff;--ink:#16181d;--soft:#5b6270;--line:#e3e6eb;--accent:#2b6cf6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14161a;--card:#1c1f25;--ink:#eef1f5;--soft:#a8b0bd;--line:#2b2f37;--accent:#5b91ff}}
+:root[data-theme=dark]{--bg:#14161a;--card:#1c1f25;--ink:#eef1f5;--soft:#a8b0bd;--line:#2b2f37;--accent:#5b91ff}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:660px;margin:0 auto;padding:56px 22px 80px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:17px;margin:28px 0 6px}
+p,li{color:var(--soft)}
+.lead{font-size:17px}
+a{color:var(--accent)}
+code{background:var(--line);padding:2px 5px;border-radius:4px;font-size:14px}
+.date{font-size:13px;color:var(--soft);margin-top:36px;padding-top:16px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Privacy policy</h1>
+<p class="lead">Muscle Memory collects nothing, sends nothing, and has no server to send it to.</p>
+
+<h2>What it stores</h2>
+<p>
+  Two things, both on your own machine, both through the browser's extension
+  storage:
+</p>
+<ul>
+  <li>Your settings, in <code>chrome.storage.sync</code>, so they follow your
+      Chrome profile between machines the way your bookmarks do.</li>
+  <li>Two counters, in <code>chrome.storage.local</code>: how many times the
+      extension pressed a shortcut on your behalf, and how many of those Figma
+      acted on. This is what the diagnostics panel reports. It records counts,
+      never keystrokes.</li>
+</ul>
+
+<h2>What it does not do</h2>
+<ul>
+  <li>No analytics, no telemetry, no error reporting, no unique identifier.</li>
+  <li>No network requests of any kind. The extension declares no host
+      permissions and cannot reach a remote server.</li>
+  <li>No reading of your Figma files, designs, comments or account. It inspects
+      keyboard and mouse events, and the wording of banners, and nothing else.</li>
+  <li>Nothing is shared with anyone, because nothing leaves your machine.</li>
+</ul>
+
+<h2>Permissions</h2>
+<p>
+  The extension requests one permission, <code>storage</code>, for the settings
+  above. Its content script runs only on <code>figma.com</code>, which is
+  declared in the manifest rather than requested as a broad host permission.
+</p>
+
+<h2>Removing your data</h2>
+<p>
+  "Reset everything" in the options page clears the settings. Uninstalling the
+  extension removes both stores entirely. There is no copy anywhere else.
+</p>
+
+<h2>Verifying all of this</h2>
+<p>
+  The extension has no build step: the source on
+  <a href="https://github.com/john-athan/muscle-memory">GitHub</a> is byte for
+  byte what runs in your browser. Searching it for <code>fetch</code>,
+  <code>XMLHttpRequest</code> or <code>WebSocket</code> returns nothing.
+</p>
+
+<p class="date">
+  Muscle Memory is not affiliated with Figma, Inc.<br>
+  Questions: <a href="https://github.com/john-athan/muscle-memory/issues">open an issue</a>.
+</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+/* The popup is the one-second version of the options page: the single setting,
+   its current effect in a sentence, and a way through to the rest. */
+
+body.popup {
+  width: 280px;
+  padding: 14px 16px 12px;
+  background: var(--card);
+}
+.pop-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pop-head strong { font-size: 14px; letter-spacing: -.01em; }
+.pop-state { margin: 10px 0 12px; font-size: 13px; color: var(--ink-soft); }
+.pop-foot { border-top: 1px solid var(--line); padding-top: 10px; display: flex; }
+.popup .link-btn { margin-left: 0; }

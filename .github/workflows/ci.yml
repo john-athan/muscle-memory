@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Validate manifest.json is well-formed JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'))"
+
+      - name: Check the manifest lists every script it ships
+        # A content script renamed in src/ but not in the manifest fails
+        # silently at load time, which is the one break users cannot diagnose.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+            for (const f of m.content_scripts[0].js.concat([m.background.service_worker])) {
+              if (!fs.existsSync(f)) { console.error("manifest references missing file: " + f); process.exit(1); }
+            }
+            console.log("manifest references " + (m.content_scripts[0].js.length + 1) + " files, all present");
+          '
+
+      - name: Syntax-check every script
+        run: |
+          for f in src/*.js test/*.test.js; do
+            node --check "$f" || exit 1
+          done
+
+      - name: Test
+        run: npm test
+
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Format
+        run: cargo fmt --manifest-path tools/icons/Cargo.toml --check
+
+      - name: Clippy
+        run: cargo clippy --manifest-path tools/icons/Cargo.toml -- -D warnings
+
+      - name: Icons in the tree match what the generator produces
+        # The PNGs are committed so that loading the extension needs no
+        # toolchain. That is only safe if they cannot drift from the source.
+        run: |
+          cargo run --release --quiet --manifest-path tools/icons/Cargo.toml
+          git diff --exit-code -- icons/ || {
+            echo "icons/ is out of date; run the generator and commit the result"
+            exit 1
+          }
