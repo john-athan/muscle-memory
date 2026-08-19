@@ -1,13 +1,25 @@
-/* The popup is the one-second version of the options page: the single setting,
-   its current effect in a sentence, and a way through to the rest. */
+/* The popup is the cheat sheet.
+ *
+ * Somebody opens it to answer one question, almost always "how do I rename
+ * now?", so the answer is the content and the toggle is the trim. It also
+ * names what the switch actually controls: it governs the keymap only, and
+ * an unlabelled switch beside the product name reads as a power button. */
 
 body.popup {
-  width: 280px;
-  padding: 14px 16px 12px;
+  width: 300px;
+  padding: 14px 16px 10px;
   background: var(--card);
 }
-.pop-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.pop-head strong { font-size: 14px; letter-spacing: -.01em; }
-.pop-state { margin: 10px 0 12px; font-size: 13px; color: var(--ink-soft); }
-.pop-foot { border-top: 1px solid var(--line); padding-top: 10px; display: flex; }
-.popup .link-btn { margin-left: 0; }
+.pop-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; padding-bottom: 12px;
+}
+.pop-head strong { font-size: 13.5px; display: block; }
+.pop-head small { color: var(--faint); font-size: 11.5px; }
+.popup .ledger { border-top: 1px solid var(--line-soft); }
+.popup .claim { padding: 10px 0 10px 10px; gap: 2px 10px; }
+.popup .claim-gets { font-size: 13px; }
+.popup .claim-then { font-size: 12px; }
+.pop-foot { border-top: 1px solid var(--line-soft); padding-top: 9px; margin-top: 2px; display: flex; }
+.popup .linkish { margin-left: 0; }
+.popup .empty { color: var(--soft); font-size: 12.5px; padding: 12px 0; margin: 0; }

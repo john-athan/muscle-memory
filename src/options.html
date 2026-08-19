@@ -8,115 +8,128 @@
 </head>
 <body>
   <main class="page">
-    <header class="head">
-      <h1>Muscle&nbsp;Memory</h1>
-      <p class="sub">Figma, in a browser, behaving like it knows it is in one.</p>
-    </header>
+    <h1 class="wordmark"><span class="glyph" aria-hidden="true">&#8984;</span> Muscle Memory</h1>
+    <p class="tagline">Figma, in a browser, behaving like it knows it is in one.</p>
 
-    <div id="welcome" class="notice" hidden>
-      <strong>One thing before you start.</strong>
-      Figma tabs that were already open do not have the extension in them yet.
-      Reload them once and it takes effect.
-    </div>
+    <section class="welcome" id="welcome" hidden aria-labelledby="welcome-h">
+      <h2 id="welcome-h">You&#8217;re set. Three things to know.</h2>
+      <div class="ledger">
+        <div class="claim is-danger">
+          <span class="cap">&#8679;&#8984;R</span>
+          <div class="claim-gets">Hard-reloads again</div>
+          <div class="claim-then">Paste to Replace is now <span
+            class="cap">&#8997;&#8679;&#8984;V</span>, where it used to live.</div>
+        </div>
+        <div class="claim to-browser">
+          <span class="cap">&#8984;R</span>
+          <div class="claim-gets">Reloads the page</div>
+          <div class="claim-then">Rename is <span class="cap">F2</span>. Double-clicking a layer
+            name still works.</div>
+        </div>
+        <div class="claim to-browser">
+          <span class="cap">&#8679;</span>
+          <div class="claim-gets">+ right-click, for the browser&#8217;s menu</div>
+          <div class="claim-then">A plain right-click still gives Figma&#8217;s.</div>
+        </div>
+      </div>
+      <p class="after">
+        Figma tabs you already had open don&#8217;t have this in them yet. Reload them once.
+      </p>
+    </section>
 
-    <section class="card" aria-labelledby="h-keymap">
+    <section class="card" aria-labelledby="h-keys">
       <div class="card-head">
         <div>
-          <h2 id="h-keymap">Conventional keymap</h2>
+          <h2 id="h-keys">Your keys</h2>
           <p class="lede">
-            The browser keeps every shortcut it owns, and the Figma actions that
-            lose a chord move to the one you would have guessed.
+            Changes take effect straight away in open Figma tabs.
           </p>
         </div>
         <label class="switch">
-          <input type="checkbox" id="keymap-enabled">
+          <input type="checkbox" id="keymap-enabled" aria-label="Conventional keymap">
           <span class="slider" aria-hidden="true"></span>
-          <span class="switch-label">On</span>
+          <span class="switch-state" id="switch-state" aria-hidden="true">On</span>
         </label>
       </div>
 
-      <details class="detail">
-        <summary>Which chords, exactly <span class="count" id="rule-count"></span></summary>
-        <div class="rules" id="rules"></div>
+      <div class="ledger" id="ledger"></div>
+
+      <details id="rules-detail">
+        <summary>Change which chords <span class="count" id="rule-count"></span></summary>
+        <div id="rules"></div>
       </details>
 
-      <details class="detail">
-        <summary>Chords deliberately left to Figma</summary>
-        <p class="note">
+      <details>
+        <summary>Left to Figma on purpose</summary>
+        <p class="lede">
           The rule is not that the browser always wins. It is that the meaning
           you expect wins. On a canvas these read as design commands, and the
-          browser's version of each is still reachable another way.
+          browser&#8217;s version of each is still reachable another way.
         </p>
-        <div class="rules" id="keeps"></div>
-      </details>
-
-      <details class="detail">
-        <summary>Chords that were never at risk</summary>
-        <p class="note">
-          Chrome resolves these above the page, so no website can take them and
-          no extension needs to defend them. Listed so you know they were checked.
-        </p>
-        <p class="chips" id="reserved"></p>
+        <div class="ledger" id="keeps"></div>
       </details>
     </section>
 
     <section class="card" aria-labelledby="h-canvas">
-      <h2 id="h-canvas">Canvas</h2>
+      <h2 id="h-canvas">Mouse</h2>
+      <p class="lede">
+        Figma is built for a trackpad. These are for the rest of us.
+      </p>
 
-      <fieldset class="field">
-        <legend>Mouse wheel</legend>
-        <label class="radio">
+      <fieldset>
+        <legend>Scroll wheel</legend>
+        <label class="opt">
           <input type="radio" name="scroll" value="figma">
-          <span><strong>Leave it to Figma</strong><small>Wheel pans, pinch zooms.</small></span>
+          <span><strong>Leave it alone</strong><small>The wheel pans, a trackpad pinch zooms. Figma&#8217;s own behaviour.</small></span>
         </label>
-        <label class="radio">
+        <label class="opt">
           <input type="radio" name="scroll" value="zoom">
-          <span><strong>Wheel zooms</strong><small>What an external mouse expects. Shift&#8202;+&#8202;wheel pans.</small></span>
-        </label>
-        <label class="radio">
-          <input type="radio" name="scroll" value="pan">
-          <span><strong>Wheel always pans</strong><small>Only a real trackpad pinch zooms.</small></span>
+          <span><strong>The wheel zooms</strong><small>What a mouse wheel does in most design tools. Hold Shift to pan.</small></span>
         </label>
       </fieldset>
 
-      <label class="check">
+      <label class="opt">
         <input type="checkbox" id="right-click">
-        <span><strong>Shift&#8202;+&#8202;right-click gives the browser menu</strong>
-        <small>An ordinary right-click still opens Figma's own menu, which is worth keeping.</small></span>
+        <span><strong>Shift + right-click opens the browser menu</strong>
+        <small>A plain right-click still opens Figma&#8217;s, which is worth keeping.</small></span>
       </label>
 
-      <label class="check">
+      <label class="opt">
         <input type="checkbox" id="middle-click">
         <span><strong>Protect middle-click panning</strong>
-        <small>Stops Chrome claiming the drag for autoscroll, and X11 for a primary-selection paste.</small></span>
+        <small>Stops Windows and Linux claiming the drag for autoscroll. Middle-clicking a link still opens a tab.</small></span>
       </label>
     </section>
 
-    <section class="card" aria-labelledby="h-declutter">
-      <h2 id="h-declutter">Interface noise</h2>
+    <section class="card" aria-labelledby="h-noise">
+      <h2 id="h-noise">Banners</h2>
       <p class="lede">
-        Matched on the wording of each banner rather than on class names, so a
-        Figma redesign makes one stop working rather than making it hide the
-        wrong thing.
+        Found by the words in the banner, not by how it is built. When Figma
+        redesigns, the worst that happens is a banner comes back. Only ever on
+        an open file, never on the rest of figma.com.
       </p>
       <div id="declutter"></div>
     </section>
 
-    <section class="card" aria-labelledby="h-diag">
-      <h2 id="h-diag">Diagnostics</h2>
+    <section class="card" aria-labelledby="h-check">
+      <h2 id="h-check">Do the moved shortcuts work?</h2>
       <p class="lede">
-        Moving an action to a new chord means pressing the old one on your
-        behalf, and a synthesised keystroke is one an application may ignore.
-        Rather than assume, the extension measures whether Figma acted, and
-        reports it here.
+        Three shortcuts had to move. Making them work means pressing the old
+        key for you, and Figma is allowed to ignore a keypress that did not
+        come from your fingers. So this checks rather than promises.
+        <span class="cap">&#8679;&#8984;R</span> is not in that group: it uses
+        a shortcut Figma already ships, so it works either way.
       </p>
-      <div id="health" class="health">Nothing measured yet. The counter fills in once a rehomed chord is used.</div>
+      <div class="verdict" id="verdict" role="status"></div>
+      <button type="button" class="btn" id="check">Check now</button>
     </section>
 
     <footer class="foot">
       <span id="version"></span>
-      <a href="https://github.com/john-athan/muscle-memory">Source and issues</a>
-      <button type="button" id="reset" class="link-btn">Reset everything</button>
+      <a href="https://github.com/john-athan/muscle-memory">Source</a>
+      <a href="https://github.com/john-athan/muscle-memory/issues">Report a problem</a>
+      <button type="button" id="reset" class="linkish">Reset settings</button>
+      <p class="disclaimer">Not affiliated with Figma, Inc.</p>
     </footer>
   </main>
 

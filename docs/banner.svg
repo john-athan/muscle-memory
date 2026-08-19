@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-label="Muscle Memory: Figma stops eating your browser's shortcuts.">
+  <defs>
+    <style>
+      .bg{fill:#e9ebee}
+      .ink{fill:#14161b}
+      .soft{fill:#545c6a}
+      .faint{fill:#6b7280}
+      .rule{stroke:#d6dae0}
+      .capface{fill:#fbfcfd}
+      .capside{fill:#c9ced6}
+      .capedge{fill:#aeb5bf}
+      .claim{fill:#4f2fe8}
+      .danger{fill:#b32d1b}
+      .m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+      .s{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+      @media (prefers-color-scheme:dark){
+        .bg{fill:#101216} .ink{fill:#eef1f5} .soft{fill:#a6aeba} .faint{fill:#949cab}
+        .rule{stroke:#2b3038}
+        .capface{fill:#2b313b} .capside{fill:#171a20} .capedge{fill:#0d0f13}
+        .claim{fill:#9b86ff} .danger{fill:#f2846f}
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="400"/>
+
+  <text class="m faint" x="72" y="86" font-size="13" font-weight="600" letter-spacing="3.6">BROWSER EXTENSION</text>
+  <text class="s ink" x="70" y="182" font-size="82" font-weight="800" letter-spacing="-3.4">MUSCLE</text>
+  <text class="s ink" x="70" y="256" font-size="82" font-weight="800" letter-spacing="-3.4">MEMORY</text>
+  <text class="s soft" x="72" y="300" font-size="19">Figma stops eating your browser&#8217;s shortcuts.</text>
+
+  <line class="rule" x1="72" y1="330" x2="470" y2="330" stroke-width="1"/>
+  <text class="m faint" x="72" y="356" font-size="12.5" letter-spacing="1.4">MIT &#183; no dependencies &#183; no build step</text>
+
+  <g transform="translate(742,96)">
+    <rect class="capedge" x="0" y="18" width="322" height="132" rx="18"/>
+    <rect class="capside" x="0" y="10" width="322" height="132" rx="18"/>
+    <rect class="capface" x="0" y="0" width="322" height="132" rx="18"/>
+    <text class="m ink" x="161" y="86" font-size="56" font-weight="700" text-anchor="middle" letter-spacing="1">&#8679;&#8984;R</text>
+  </g>
+
+  <g transform="translate(742,278)">
+    <rect class="danger" x="0" y="0" width="3" height="42" rx="1.5"/>
+    <text class="m danger" x="14" y="14" font-size="10.5" font-weight="600" letter-spacing="1.8">FIGMA TAKES IT</text>
+    <text class="s soft" x="14" y="34" font-size="14">Paste to Replace</text>
+
+    <rect class="claim" x="176" y="0" width="3" height="42" rx="1.5"/>
+    <text class="m claim" x="190" y="14" font-size="10.5" font-weight="600" letter-spacing="1.8">YOU MEANT</text>
+    <text class="s soft" x="190" y="34" font-size="14">Hard reload</text>
+  </g>
+</svg>

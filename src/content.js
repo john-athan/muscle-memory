@@ -71,7 +71,7 @@
    * defined from an isolated world lives on that world's wrapper, and the
    * page reads the event through its own.
    */
-  function dispatchChord(chord) {
+  function dispatchChord(chord, count) {
     const init = KEYMAP.chordToInit(chord);
     if (!init) return false;
 
@@ -84,10 +84,12 @@
       if (type === 'keydown') accepted = !notCancelled;
     }
 
-    health.attempts += 1;
-    if (accepted) health.accepted += 1;
-    health.lastChord = chord;
-    publishHealth();
+    if (count !== false) {
+      health.attempts += 1;
+      if (accepted) health.accepted += 1;
+      health.lastChord = chord;
+      publishHealth();
+    }
     return accepted;
   }
 
@@ -387,9 +389,27 @@
 
   SETTINGS.load(adopt);
 
+  /**
+   * Answer the options page's "check now".
+   *
+   * The options page has no content script, so it cannot ask a question
+   * directly without host permissions this extension does not want. It writes
+   * a request to storage instead and we answer through the same channel. Only
+   * an editor page answers: nowhere else has a Figma to press a key at, and a
+   * silent non-answer is what the options page reads as "no file open".
+   */
+  function runSelfTest() {
+    if (!declutterAllowedHere()) return;
+    dispatchChord(KEYMAP.PROBE.open);
+    // Leave no trace: whatever the probe opened is closed again, and the
+    // close is not counted, since it measures nothing.
+    setTimeout(() => dispatchChord(KEYMAP.PROBE.close, false), 150);
+  }
+
   try {
-    chrome.storage.onChanged.addListener((_changes, area) => {
+    chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'sync') SETTINGS.load(adopt);
+      if (area === 'local' && changes.selfTest && changes.selfTest.newValue) runSelfTest();
     });
   } catch (_) {
     // Storage is unavailable, so settings can never change. The listeners

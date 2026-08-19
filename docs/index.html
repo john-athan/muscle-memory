@@ -6,174 +6,272 @@
 <title>Muscle Memory</title>
 <meta name="description" content="A browser extension that gives Figma back your browser's keyboard shortcuts.">
 <style>
+/* One idea carries the design: a chord is a physical key, and two applications
+   are claiming it. So keys are drawn as keys, and colour is the ruling, never
+   decoration. Violet is handed back to the browser, teal stays with Figma, and
+   red appears exactly once, on the chord that destroys work. */
 :root{
   color-scheme:light dark;
-  --bg:#f6f7f9; --card:#fff; --ink:#16181d; --soft:#5b6270; --faint:#8b93a1;
-  --line:#e3e6eb; --accent:#2b6cf6; --good:#1a7f4b; --bad:#c0392b; --chip:#eef1f6;
-  --shadow:0 1px 2px rgba(16,20,30,.05),0 10px 30px rgba(16,20,30,.06);
+  --paper:#e9ebee; --card:#fff; --sunk:#f3f5f7;
+  --ink:#14161b; --soft:#545c6a; --faint:#6b7280;
+  --line:#d6dae0; --line-soft:#e6e9ed;
+  --claim:#4f2fe8; --claim-wash:#efecfe;
+  --keep:#0f766e; --keep-wash:#e6f2f0;
+  --danger:#b32d1b; --danger-wash:#fbecea;
+  --cap-face:#fbfcfd; --cap-side:#c9ced6; --cap-edge:#aeb5bf; --cap-ink:#14161b;
+  --on-claim:#fff;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme=light]){
-    --bg:#14161a; --card:#1c1f25; --ink:#eef1f5; --soft:#a8b0bd; --faint:#79818f;
-    --line:#2b2f37; --accent:#5b91ff; --good:#4cc98a; --bad:#f2836f; --chip:#262a32;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.28);
-  }
-}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --paper:#101216; --card:#191c22; --sunk:#14171c;
+  --ink:#eef1f5; --soft:#a6aeba; --faint:#949cab;
+  --line:#2b3038; --line-soft:#23272e;
+  --claim:#9b86ff; --claim-wash:#22203a;
+  --keep:#4fc7b8; --keep-wash:#122a29;
+  --danger:#f2846f; --danger-wash:#2f1c19;
+  --cap-face:#2b313b; --cap-side:#171a20; --cap-edge:#0d0f13; --cap-ink:#eef1f5;
+  --on-claim:#0d1017;
+}}
 :root[data-theme=dark]{
-  --bg:#14161a; --card:#1c1f25; --ink:#eef1f5; --soft:#a8b0bd; --faint:#79818f;
-  --line:#2b2f37; --accent:#5b91ff; --good:#4cc98a; --bad:#f2836f; --chip:#262a32;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.28);
+  --paper:#101216; --card:#191c22; --sunk:#14171c;
+  --ink:#eef1f5; --soft:#a6aeba; --faint:#949cab;
+  --line:#2b3038; --line-soft:#23272e;
+  --claim:#9b86ff; --claim-wash:#22203a;
+  --keep:#4fc7b8; --keep-wash:#122a29;
+  --danger:#f2846f; --danger-wash:#2f1c19;
+  --cap-face:#2b313b; --cap-side:#171a20; --cap-edge:#0d0f13; --cap-ink:#eef1f5;
+  --on-claim:#0d1017;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.5 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  -webkit-font-smoothing:antialiased}
-.wrap{max-width:860px;margin:0 auto;padding:56px 22px 80px}
-h1{font-size:34px;letter-spacing:-.025em;margin:0 0 6px;display:flex;align-items:center;gap:12px}
-h2{font-size:19px;letter-spacing:-.015em;margin:0 0 4px}
-p{margin:0 0 10px;color:var(--soft);max-width:62ch}
-.tagline{font-size:18px;color:var(--soft);margin-bottom:22px}
-section{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  box-shadow:var(--shadow);padding:24px 26px;margin:18px 0}
-figure{margin:14px 0 6px}
-figcaption{font-size:13px;color:var(--faint);margin-top:8px;max-width:62ch}
-.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:840px;margin:0 auto;padding:52px 22px 72px}
+a{color:var(--claim)}
+:focus-visible{outline:2px solid var(--claim);outline-offset:3px;border-radius:2px}
+
+.eyebrow{font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0 0 14px}
+h1{font:800 46px/0.98 var(--sans);letter-spacing:-.038em;margin:0 0 10px}
+.tagline{font-size:18px;color:var(--soft);margin:0 0 8px;max-width:52ch}
+h2{font:700 19px/1.3 var(--sans);letter-spacing:-.015em;margin:0 0 6px}
+p{margin:0 0 12px;color:var(--soft);max-width:60ch}
+section{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:26px 28px;margin:16px 0}
+
+/* the keycap, the one place this design spends anything */
+.cap{display:inline-flex;align-items:center;justify-content:center;
+ font:600 13px/1 var(--mono);letter-spacing:.02em;color:var(--cap-ink);
+ background:var(--cap-face);padding:.58em .62em .46em;border-radius:6px;
+ border:1px solid var(--cap-edge);box-shadow:0 2px 0 var(--cap-side),0 3px 0 var(--cap-edge);
+ white-space:nowrap;flex:none}
+.cap-hero{font-size:38px;padding:.5em .58em .4em;border-radius:14px;
+ box-shadow:0 5px 0 var(--cap-side),0 7px 0 var(--cap-edge),0 14px 26px rgba(16,20,30,.16);
+ position:relative;top:0;transition:top .09s ease,box-shadow .09s ease}
+.cap-hero.down{top:5px;box-shadow:0 1px 0 var(--cap-side),0 2px 0 var(--cap-edge),0 3px 9px rgba(16,20,30,.2)}
+
+/* the dispute: one key, two claimants, one ruling */
+.hero{display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+.claims{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px}
+.claimant{border-left:3px solid var(--line);padding:3px 0 3px 12px;min-width:180px}
+.claimant b{display:block;font:600 10px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.claimant span{font-size:14px;color:var(--soft)}
+.claimant.lost{border-left-color:var(--danger)}.claimant.lost b{color:var(--danger)}
+.claimant.won{border-left-color:var(--claim)}.claimant.won b{color:var(--claim)}
+
+/* the ledger, same component the extension itself uses */
+.ledger{display:flex;flex-direction:column;margin-top:6px}
+.row{display:grid;grid-template-columns:auto 1fr;gap:3px 13px;padding:13px 0 13px 12px;
+ border-left:3px solid var(--line);border-bottom:1px solid var(--line-soft)}
+.row:last-child{border-bottom:0}
+.row.to-browser{border-left-color:var(--claim)}
+.row.to-figma{border-left-color:var(--keep)}
+.row.is-danger{border-left-color:var(--danger)}
+.row>.cap{grid-row:1/span 2;align-self:start;justify-self:start;margin-top:1px}
+.gets{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.then{font-size:13px;color:var(--soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.then .cap{font-size:11px;padding:.45em .5em .35em}
+.flag{font:600 9.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+ padding:3px 6px;border-radius:3px;background:var(--sunk);color:var(--faint);border:1px solid var(--line-soft)}
+.flag-danger{background:var(--danger-wash);color:var(--danger);border-color:transparent}
+.flag-native{background:var(--keep-wash);color:var(--keep);border-color:transparent}
+[data-tip]{cursor:help}
+
+/* the mechanism */
+.scroll{overflow-x:auto}
 svg{display:block;max-width:100%;height:auto}
-.n-box{fill:var(--chip);stroke:var(--line)}
-.n-live{fill:color-mix(in srgb,var(--accent) 14%,transparent);stroke:var(--accent)}
+.n-box{fill:var(--sunk);stroke:var(--line)}
+.n-live{fill:var(--claim-wash);stroke:var(--claim)}
 .n-dead{fill:none;stroke:var(--faint);stroke-dasharray:5 4}
-.n-good{fill:color-mix(in srgb,var(--good) 15%,transparent);stroke:var(--good)}
-.n-bad{fill:color-mix(in srgb,var(--bad) 14%,transparent);stroke:var(--bad)}
-.t{fill:var(--ink);font:600 13px ui-sans-serif,system-ui,sans-serif}
-.t-s{fill:var(--soft);font:12px ui-sans-serif,system-ui,sans-serif}
-.t-f{fill:var(--faint);font:11px ui-sans-serif,system-ui,sans-serif}
-.t-lab{fill:var(--faint);font:600 11px ui-sans-serif,system-ui,sans-serif;letter-spacing:.09em}
+.n-good{fill:var(--keep-wash);stroke:var(--keep)}
+.n-bad{fill:var(--danger-wash);stroke:var(--danger)}
+.t{fill:var(--ink);font:600 13px var(--sans)}
+.t-s{fill:var(--soft);font:12px var(--sans)}
+.t-f{fill:var(--faint);font:11px var(--mono)}
+.t-lab{fill:var(--faint);font:600 10px var(--mono);letter-spacing:.16em}
 .arw{stroke:var(--faint);fill:none;stroke-width:1.6}
-.arw-dead{stroke:var(--faint);fill:none;stroke-width:1.6;stroke-dasharray:5 4;opacity:.55}
-kbd{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--chip);
-  border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:5px 7px;white-space:nowrap}
-table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
-th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--faint);padding:0 14px 8px 0;font-weight:600}
-td{padding:10px 14px 10px 0;border-top:1px solid var(--line);color:var(--soft);vertical-align:top}
-td:first-child{white-space:nowrap}
-tr[data-tip]{cursor:help}
-.badge{font:600 10px ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:.05em;
-  padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 10px}
-.step{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);
-  transition:border-color .2s,opacity .2s}
-.step[data-on=false]{opacity:.42}
-.step[data-on=true]{border-color:var(--accent)}
-.step .num{font:600 10px ui-sans-serif;color:var(--faint);letter-spacing:.08em}
-.step p{font-size:12.5px;margin:6px 0 0;color:var(--soft)}
-.ctrl{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--faint)}
-.ctrl button{font:inherit;background:var(--chip);color:var(--ink);border:1px solid var(--line);
-  border-radius:7px;padding:5px 11px;cursor:pointer}
-.ctrl button:hover{border-color:var(--accent)}
-.cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
-  padding:11px 18px;border-radius:9px;font-weight:600;font-size:15px}
+.arw-dead{stroke:var(--faint);fill:none;stroke-width:1.6;stroke-dasharray:5 4;opacity:.6}
+figcaption{font-size:13px;color:var(--faint);margin-top:10px;max-width:62ch}
+
+/* the walkthrough */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 12px}
+.step{border:1px solid var(--line);border-radius:4px;padding:12px;background:var(--sunk);
+ border-top:2px solid var(--line);transition:border-top-color .2s,opacity .2s}
+.step[data-on=false]{opacity:.75}
+.step[data-on=true]{border-top-color:var(--claim)}
+.step .n{font:600 9.5px/1 var(--mono);letter-spacing:.12em;color:var(--faint)}
+.step p{font-size:12.5px;margin:8px 0 0;color:var(--soft)}
+.ctrl{display:flex;gap:8px;align-items:center;font:12px var(--mono);color:var(--faint)}
+.ctrl button{font:600 12px var(--sans);background:var(--card);color:var(--ink);
+ border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:6px 12px;cursor:pointer}
+.ctrl button:hover{border-color:var(--claim);color:var(--claim)}
+
+ul{margin:8px 0 0;padding-left:19px;color:var(--soft);max-width:62ch}
+li{margin:7px 0}
+.cta{display:inline-block;background:var(--claim);color:var(--on-claim);text-decoration:none;
+ padding:12px 20px;border-radius:7px;font-weight:600;font-size:15px}
 .cta.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-ul{margin:6px 0 0;padding-left:20px;color:var(--soft);max-width:62ch}
-li{margin:5px 0}
-.foot{margin-top:26px;font-size:13px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap}
+.row-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.foot{margin-top:24px;padding-top:16px;border-top:1px solid var(--line);
+ font:12.5px/1.6 var(--mono);color:var(--faint);display:flex;gap:16px;flex-wrap:wrap}
 .foot a{color:var(--soft)}
-#tip{position:fixed;z-index:9;max-width:320px;background:var(--ink);color:var(--bg);
-  font-size:12.5px;line-height:1.45;padding:8px 11px;border-radius:8px;pointer-events:none;
-  opacity:0;transition:opacity .12s;box-shadow:0 6px 20px rgba(0,0,0,.28)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#tip{position:fixed;z-index:9;max-width:320px;background:var(--ink);color:var(--paper);
+ font-size:12.5px;line-height:1.45;padding:9px 12px;border-radius:6px;pointer-events:none;
+ opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 #tip[data-show=true]{opacity:1}
-@media (max-width:640px){.steps{grid-template-columns:repeat(2,1fr)}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:640px){.steps{grid-template-columns:repeat(2,1fr)}h1{font-size:36px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<h1>
-  <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
-    <rect x="1" y="1" width="36" height="36" rx="9" fill="var(--accent)"/>
-    <g stroke="#fff" stroke-width="2.6" fill="none">
-      <rect x="14" y="14" width="10" height="10"/>
-      <circle cx="14" cy="14" r="3.4"/><circle cx="24" cy="14" r="3.4"/>
-      <circle cx="14" cy="24" r="3.4"/><circle cx="24" cy="24" r="3.4"/>
-    </g>
-  </svg>
-  Muscle Memory
-</h1>
+<p class="eyebrow">Browser extension &#183; MIT &#183; no dependencies</p>
+<h1>Muscle Memory</h1>
 <p class="tagline">Figma, in a browser, behaving like it knows it is in one.</p>
 
 <section>
-  <h2>The one that costs you work</h2>
-  <p>
-    <kbd>⌘⇧R</kbd> in Figma is <strong>Paste to Replace</strong>. Press it meaning
-    hard reload, with a slide selected, and Figma swaps that slide for your clipboard.
-  </p>
+  <div class="hero">
+    <span class="cap cap-hero" id="hero">&#8679;&#8984;R</span>
+    <div style="flex:1;min-width:280px">
+      <h2>One key, two claimants</h2>
+      <p>
+        In Figma, <span class="cap">&#8679;&#8984;R</span> is <strong>Paste to Replace</strong>.
+        Press it meaning hard reload, with a slide selected, and Figma swaps that
+        slide for whatever is on your clipboard.
+      </p>
+      <div class="claims">
+        <div class="claimant lost"><b>Figma takes it</b><span>Paste to Replace</span></div>
+        <div class="claimant won"><b>You meant</b><span>Hard reload</span></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <figure class="scroll">
-    <svg viewBox="0 0 700 250" role="img" aria-label="Two rows comparing what happens to a keystroke without and with the extension.">
+<section>
+  <h2>What changes</h2>
+  <p>Every chord below goes back to the browser. What Figma used it for moves somewhere you already know.</p>
+  <div class="ledger">
+    <div class="row is-danger" data-tip="Figma moved Paste to Replace here from ⌥⇧⌘V and never unbound the old chord, so this rule emulates nothing at all. It is the only destructive one, and it is on by default.">
+      <span class="cap">&#8679;&#8984;R</span>
+      <div class="gets">Hard reload <span class="flag flag-danger">can lose work</span></div>
+      <div class="then">Paste to Replace moved to <span class="cap">&#8997;&#8679;&#8984;V</span>
+        <span class="flag flag-native">Figma&#8217;s own key</span></div>
+    </div>
+    <div class="row to-browser" data-tip="F2 renames in VS Code, in Finder and in Windows Explorer. Double-clicking the layer name still works too.">
+      <span class="cap">&#8984;R</span>
+      <div class="gets">Reload</div>
+      <div class="then">Rename moved to <span class="cap">F2</span></div>
+    </div>
+    <div class="row to-browser" data-tip="Figma's quick actions on ⌘/ also search the file and are left untouched.">
+      <span class="cap">&#8984;F</span>
+      <div class="gets">Find on the page</div>
+      <div class="then">File search moved to <span class="cap">&#8997;&#8984;F</span></div>
+    </div>
+    <div class="row to-browser" data-tip="Free of charge: Figma binds nothing to ⌘S. It saves continuously, and a named version is ⌘⌥S, which this does not touch.">
+      <span class="cap">&#8984;S</span>
+      <div class="gets">Save the page</div>
+      <div class="then">Figma binds nothing here</div>
+    </div>
+    <div class="row to-browser" data-tip="We have not confirmed what Figma binds to ⌘P, and the interface says so rather than guessing. Reclaiming works either way.">
+      <span class="cap">&#8984;P</span>
+      <div class="gets">Print</div>
+      <div class="then">Nothing confirmed to move</div>
+    </div>
+    <div class="row to-browser" data-tip="Off by default. This is the only genuine trade in the table: reordering layers is a frequent canvas action, where browser history on a canvas mostly is not.">
+      <span class="cap">&#8984;[</span>
+      <div class="gets">Back and forward <span class="flag">off by default</span></div>
+      <div class="then">Send backward moved to <span class="cap">&#8997;&#8984;[</span></div>
+    </div>
+    <div class="row to-figma" data-tip="On a canvas these read as duplicate, group, ungroup and zoom, and each browser action is still reachable another way: the star in the address bar, Enter inside the find bar, the browser's own zoom menu.">
+      <span class="cap">&#8984;D</span>
+      <div class="gets">Left with Figma, deliberately</div>
+      <div class="then">Also <span class="cap">&#8984;G</span> <span class="cap">&#8679;&#8984;G</span>
+        <span class="cap">&#8984;=</span> <span class="cap">&#8984;-</span> <span class="cap">&#8984;0</span></div>
+    </div>
+  </div>
+  <p style="margin-top:16px">
+    The rule is not that the browser always wins. It is that the meaning you expect wins.
+  </p>
+</section>
+
+<section>
+  <h2>Why it cannot be broken</h2>
+  <figure class="scroll" style="margin:14px 0 0">
+    <svg viewBox="0 0 700 250" role="img" aria-label="Two rows comparing what happens to the keystroke without and with the extension.">
       <text class="t-lab" x="0" y="14">TODAY</text>
       <g data-tip="Figma registers its listener when its bundle loads. It calls preventDefault() so the browser does not also act, which is exactly why Chrome never reloads.">
-        <rect class="n-box" x="0" y="26" width="120" height="46" rx="8"/>
-        <text class="t" x="60" y="47" text-anchor="middle">⌘⇧R</text>
+        <rect class="n-box" x="0" y="26" width="120" height="46" rx="6"/>
+        <text class="t" x="60" y="47" text-anchor="middle">&#8679;&#8984;R</text>
         <text class="t-f" x="60" y="62" text-anchor="middle">keydown</text>
         <path class="arw" d="M124 49 H176"/><path class="arw" d="M170 44 l7 5 -7 5"/>
-        <rect class="n-live" x="180" y="26" width="150" height="46" rx="8"/>
+        <rect class="n-live" x="180" y="26" width="150" height="46" rx="6"/>
         <text class="t" x="255" y="47" text-anchor="middle">Figma handler</text>
         <text class="t-f" x="255" y="62" text-anchor="middle">preventDefault()</text>
         <path class="arw" d="M334 49 H386"/><path class="arw" d="M380 44 l7 5 -7 5"/>
-        <rect class="n-bad" x="390" y="26" width="150" height="46" rx="8"/>
+        <rect class="n-bad" x="390" y="26" width="150" height="46" rx="6"/>
         <text class="t" x="465" y="47" text-anchor="middle">Slide replaced</text>
         <text class="t-f" x="465" y="62" text-anchor="middle">no reload</text>
       </g>
       <line x1="0" y1="100" x2="700" y2="100" stroke="var(--line)" stroke-width="1"/>
 
       <text class="t-lab" x="0" y="128">WITH MUSCLE MEMORY</text>
-      <rect class="n-box" x="0" y="140" width="120" height="46" rx="8"/>
-      <text class="t" x="60" y="161" text-anchor="middle">⌘⇧R</text>
+      <rect class="n-box" x="0" y="140" width="120" height="46" rx="6"/>
+      <text class="t" x="60" y="161" text-anchor="middle">&#8679;&#8984;R</text>
       <text class="t-f" x="60" y="176" text-anchor="middle">keydown</text>
       <path class="arw" d="M124 163 H176"/><path class="arw" d="M170 158 l7 5 -7 5"/>
       <g data-tip="Registered on window in the capture phase at document_start, before Figma's bundle exists. Capture runs top down, and listeners on one target run in registration order, so this one is first.">
-        <rect class="n-live" x="180" y="140" width="150" height="46" rx="8"/>
+        <rect class="n-live" x="180" y="140" width="150" height="46" rx="6"/>
         <text class="t" x="255" y="161" text-anchor="middle">Muscle Memory</text>
-        <text class="t-f" x="255" y="176" text-anchor="middle">stopImmediatePropagation</text>
+        <text class="t-f" x="255" y="176" text-anchor="middle">stops propagation</text>
       </g>
       <path class="arw-dead" d="M334 163 H386"/>
       <g data-tip="The event is never delivered to the page, so Paste to Replace cannot fire. Nothing about Figma is patched or disabled.">
-        <rect class="n-dead" x="390" y="140" width="150" height="46" rx="8"/>
+        <rect class="n-dead" x="390" y="140" width="150" height="46" rx="6"/>
         <text class="t-s" x="465" y="167" text-anchor="middle">Figma never sees it</text>
       </g>
       <path class="arw" d="M255 190 V206 H570 V140"/>
       <path class="arw" d="M565 146 l5 -7 5 7"/>
       <g data-tip="preventDefault() is what cancels a browser default. Stopping propagation does not, so Chrome acts exactly as it would on a page with no listeners at all.">
-        <rect class="n-good" x="560" y="94" width="140" height="46" rx="8"/>
+        <rect class="n-good" x="560" y="94" width="140" height="46" rx="6"/>
         <text class="t" x="630" y="115" text-anchor="middle">Hard reload</text>
         <text class="t-f" x="630" y="130" text-anchor="middle">browser default</text>
       </g>
-      <text class="t-s" x="262" y="222">the default action was never cancelled, so it still runs</text>
+      <text class="t-s" x="262" y="222">the default was never cancelled, so it still runs</text>
     </svg>
     <figcaption>
-      Stopping propagation removes the page's listener. It does not remove the
-      browser's default. Hover any box for the mechanism.
+      Stopping propagation removes the page&#8217;s listener. It does not remove the
+      browser&#8217;s default. Hover any box for the mechanism.
     </figcaption>
   </figure>
-</section>
 
-<section>
-  <h2>One keystroke, step by step</h2>
   <div class="steps" id="steps">
-    <div class="step" data-on="true"><span class="num">01</span>
-      <svg viewBox="0 0 120 46" aria-hidden="true"><rect class="n-live" x="1" y="1" width="118" height="44" rx="7"/><text class="t" x="60" y="28" text-anchor="middle">⌘⇧R</text></svg>
+    <div class="step" data-on="true"><span class="n">PRESS</span>
       <p>You press the chord you have pressed for years.</p></div>
-    <div class="step" data-on="false"><span class="num">02</span>
-      <svg viewBox="0 0 120 46" aria-hidden="true"><rect class="n-box" x="1" y="1" width="118" height="44" rx="7"/><circle cx="30" cy="23" r="5" fill="var(--accent)"/><text class="t-s" x="70" y="27" text-anchor="middle">window</text></svg>
-      <p>The capture listener on <code>window</code> gets it first.</p></div>
-    <div class="step" data-on="false"><span class="num">03</span>
-      <svg viewBox="0 0 120 46" aria-hidden="true"><rect class="n-dead" x="1" y="1" width="118" height="44" rx="7"/><line x1="24" y1="14" x2="96" y2="32" stroke="var(--bad)" stroke-width="2.4"/></svg>
-      <p>Propagation stops. Figma's handler never runs.</p></div>
-    <div class="step" data-on="false"><span class="num">04</span>
-      <svg viewBox="0 0 120 46" aria-hidden="true"><rect class="n-good" x="1" y="1" width="118" height="44" rx="7"/><text class="t" x="60" y="28" text-anchor="middle">reload</text></svg>
-      <p>Chrome reloads. Paste to Replace is still on <kbd>⌥⇧⌘V</kbd>.</p></div>
+    <div class="step" data-on="false"><span class="n">CAPTURE</span>
+      <p>The listener on <code>window</code> gets it first, because it was there before Figma.</p></div>
+    <div class="step" data-on="false"><span class="n">STOP</span>
+      <p>Propagation stops. Figma&#8217;s handler is never called.</p></div>
+    <div class="step" data-on="false"><span class="n">DEFAULT</span>
+      <p>Nothing cancelled the default, so Chrome reloads.</p></div>
   </div>
   <div class="ctrl">
     <button type="button" id="prev">Back</button>
@@ -184,54 +282,30 @@ li{margin:5px 0}
 </section>
 
 <section>
-  <h2>What changes</h2>
-  <div class="scroll">
-    <table>
-      <thead><tr><th>Chord</th><th>Back to the browser</th><th>Figma used it for</th><th>Moved to</th></tr></thead>
-      <tbody>
-        <tr data-tip="Figma moved Paste to Replace here from ⌥⇧⌘V and never unbound the old chord, so this rule emulates nothing at all. It is the only destructive one, and it is on by default.">
-          <td><kbd>⌘⇧R</kbd></td><td>Hard reload</td><td>Paste to Replace</td>
-          <td><kbd>⌥⇧⌘V</kbd> <span class="badge">native</span></td></tr>
-        <tr data-tip="F2 renames in VS Code, in Finder and in Windows Explorer. Double-clicking the layer name still works too.">
-          <td><kbd>⌘R</kbd></td><td>Reload</td><td>Rename selection</td><td><kbd>F2</kbd></td></tr>
-        <tr data-tip="Figma's quick actions on ⌘/ also search the file and are left untouched.">
-          <td><kbd>⌘F</kbd></td><td>Find on the page</td><td>Search the file</td><td><kbd>⌥⌘F</kbd></td></tr>
-        <tr data-tip="Free of charge: Figma binds nothing to ⌘S. It saves continuously, and a named version is ⌘⌥S, which this does not touch.">
-          <td><kbd>⌘S</kbd></td><td>Save the page</td><td>nothing at all</td><td>nothing to move</td></tr>
-        <tr data-tip="Off by default. This is the only genuine trade in the table: reordering layers is a frequent canvas action, where browser history on a canvas mostly is not.">
-          <td><kbd>⌘[</kbd> <kbd>⌘]</kbd></td><td>Back and forward</td><td>Send backward, bring forward</td><td><kbd>⌥⌘[</kbd> <kbd>⌥⌘]</kbd></td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p style="margin-top:14px">
-    Left to Figma on purpose: <kbd>⌘D</kbd> <kbd>⌘G</kbd> <kbd>⌘⇧G</kbd> <kbd>⌘=</kbd>
-    <kbd>⌘0</kbd>. On a canvas those read as duplicate, group, ungroup and zoom.
-    The rule is not that the browser always wins. It is that the expected meaning wins.
-  </p>
-</section>
-
-<section>
   <h2>What it will not promise</h2>
   <ul>
-    <li data-tip="An app that acts on a shortcut calls preventDefault to stop the browser also acting, and dispatchEvent returns false exactly when that happened. The options page reports the measured number rather than a claim.">
-      Moving an action means pressing the old chord for you, with a synthetic
-      event Figma may ignore. The extension measures whether it worked and tells you.
+    <li data-tip="An app that acts on a shortcut calls preventDefault to stop the browser also acting, and dispatchEvent returns false exactly when that happened. The options page reports the measured number rather than a claim, and has a button to run the check on demand.">
+      Moving a command means pressing the old key for you, with a keystroke Figma
+      is allowed to ignore. The extension measures whether it worked and tells you.
     </li>
-    <li data-tip="Reclaiming needs no cooperation from Figma: an event they never receive is one they cannot act on. Only the moved actions carry any risk, and each keeps another route in.">
-      Reclaiming a chord has no such risk, which is why the destructive rule uses none.
+    <li data-tip="Handing a chord back needs no cooperation from Figma: an event they never receive is one they cannot act on. Only the moved commands carry any risk, and each keeps another way in.">
+      Handing a chord back carries no such risk, which is why the destructive rule uses none.
     </li>
-    <li data-tip="Patterns live in src/selectors.js and match on wording rather than class names. A 400 character cap and a load-bearing check mean a stale pattern hides nothing rather than hiding the app.">
+    <li data-tip="Patterns live in src/selectors.js and match on wording rather than class names. They run on open files only, never on the rest of figma.com, and a load-bearing check refuses to hide anything large or containing the canvas.">
       The banner-hiding patterns will rot as Figma redesigns. They fail by doing nothing.
     </li>
+    <li data-tip="Chrome resolves ⌘N, ⌘T, ⌘W and ⌘Q above the page, so no website can take them and no extension needs to defend them.">
+      Some chords were never at risk. Those are listed too, rather than claimed as wins.
+    </li>
   </ul>
-  <div class="row">
+  <div class="row-cta">
     <a class="cta" href="https://github.com/john-athan/muscle-memory">Get it on GitHub</a>
     <a class="cta ghost" href="https://github.com/john-athan/muscle-memory#install">Install guide</a>
   </div>
 </section>
 
 <div class="foot">
-  <span>MIT licensed</span>
+  <span>MIT</span>
   <a href="https://github.com/john-athan/muscle-memory">Source</a>
   <a href="privacy-policy.html">Privacy</a>
   <span>Not affiliated with Figma, Inc.</span>
@@ -240,22 +314,22 @@ li{margin:5px 0}
 
 <div id="tip" role="tooltip" data-show="false"></div>
 <script>
-/* Progressive enhancement only. Without this file the page is a complete
-   storyboard: every step is already on screen and every tooltip is still
-   readable in the markup. */
+/* Progressive enhancement only. Without this the page is a complete
+   storyboard: every step is on screen and legible, and every tooltip is in
+   the markup as text a screen reader already reads. */
 (function(){
   "use strict";
 
-  /* Tooltips. Depth lives on data-tip so the page stays short for someone
-     pointing at it and deep for someone leaning in. */
+  /* Depth lives on data-tip, so the page stays short for someone pointing at
+     it and deep for someone leaning in. The same text is mirrored into a
+     visually hidden span, because a tooltip nobody can hear is decoration. */
   var tip = document.getElementById("tip");
-  function show(el){
+  function place(el){
     var text = el.getAttribute("data-tip");
     if(!text) return;
     tip.textContent = text;
     tip.setAttribute("data-show","true");
-    var r = el.getBoundingClientRect();
-    var t = tip.getBoundingClientRect();
+    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
     var x = Math.min(Math.max(8, r.left + r.width/2 - t.width/2), innerWidth - t.width - 8);
     var y = r.top - t.height - 10;
     if(y < 8) y = r.bottom + 10;
@@ -263,28 +337,35 @@ li{margin:5px 0}
     tip.style.top = y + "px";
   }
   function hide(){ tip.setAttribute("data-show","false"); }
-  document.querySelectorAll("[data-tip]").forEach(function(el){
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-tip]"), function(el){
     if(!el.hasAttribute("tabindex")) el.setAttribute("tabindex","0");
-    el.addEventListener("mouseenter", function(){ show(el); });
-    el.addEventListener("focus", function(){ show(el); });
+    var vh = document.createElement("span");
+    vh.className = "vh";
+    vh.textContent = el.getAttribute("data-tip");
+    el.appendChild(vh);
+    el.addEventListener("mouseenter", function(){ place(el); });
+    el.addEventListener("focus", function(){ place(el); });
     el.addEventListener("mouseleave", hide);
     el.addEventListener("blur", hide);
   });
   addEventListener("scroll", hide, {passive:true});
+  addEventListener("keydown", function(e){ if(e.key === "Escape") hide(); });
 
-  /* The stepper. Spatial already, so this only moves the highlight. */
+  /* The stepper is spatial already, so this only moves the highlight. */
   var steps = Array.prototype.slice.call(document.querySelectorAll("#steps .step"));
   var count = document.getElementById("count");
+  var play = document.getElementById("play");
   var at = 0, timer = 0;
   function draw(){
     steps.forEach(function(s,i){ s.setAttribute("data-on", i === at ? "true" : "false"); });
     count.textContent = (at+1) + " / " + steps.length;
   }
   function go(n){ at = (n + steps.length) % steps.length; draw(); }
-  function stop(){ clearInterval(timer); timer = 0; document.getElementById("play").textContent = "Play"; }
-  function play(){
+  function stop(){ clearInterval(timer); timer = 0; play.textContent = "Play"; }
+  function run(){
     if(timer) return stop();
-    document.getElementById("play").textContent = "Pause";
+    play.textContent = "Pause";
     timer = setInterval(function(){
       if(at === steps.length - 1){ stop(); return; }
       go(at + 1);
@@ -292,15 +373,22 @@ li{margin:5px 0}
   }
   document.getElementById("prev").addEventListener("click", function(){ stop(); go(at-1); });
   document.getElementById("next").addEventListener("click", function(){ stop(); go(at+1); });
-  document.getElementById("play").addEventListener("click", play);
+  play.addEventListener("click", run);
 
-  /* Run once when it first comes into view, unless motion is unwelcome. */
+  /* The hero key presses itself once, so the object reads as a key. */
   var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hero = document.getElementById("hero");
+  if(!reduced){
+    setTimeout(function(){
+      hero.classList.add("down");
+      setTimeout(function(){ hero.classList.remove("down"); }, 150);
+    }, 700);
+  }
   if(!reduced && "IntersectionObserver" in window){
     var seen = false;
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(e){
-        if(e.isIntersecting && !seen){ seen = true; go(0); play(); io.disconnect(); }
+        if(e.isIntersecting && !seen){ seen = true; go(0); run(); io.disconnect(); }
       });
     }, {threshold:.5});
     io.observe(document.getElementById("steps"));

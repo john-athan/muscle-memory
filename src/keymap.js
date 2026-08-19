@@ -191,14 +191,18 @@ const MM_RULES = [
     confirmed: false,
     destructive: false,
     rehome: null,
-    why: 'Printing a frame to PDF is the only way to get a physical page out of Figma without an export round trip.',
+    why: 'Print is a browser function people expect to have. We have not confirmed what, if anything, Figma binds here, and the interface says so rather than guessing.',
   },
   {
     id: 'save',
     chord: 'Mod+S',
     browser: 'Save the page',
     figma: null,
-    confirmed: false,
+    // Confirmed, and confirmed to be nothing: Figma binds no action to Cmd+S
+    // at all. `bindsNothing` is how the interface tells that apart from a
+    // binding nobody has checked, which reads identically in the data.
+    bindsNothing: true,
+    confirmed: true,
     destructive: false,
     rehome: null,
     // Free of charge: Figma binds nothing to Cmd+S at all. It saves
@@ -340,6 +344,9 @@ function mmResolve(chord, enabled, editing) {
   return null;
 }
 
+// Named keys the chord parser needs beyond letters, digits and F-keys.
+const MM_NAMED_KEYS = { Escape: 27, Enter: 13, Tab: 9, Space: 32 };
+
 const KEYCODES = {
   '[': [219, 'BracketLeft'], ']': [221, 'BracketRight'], '\\': [220, 'Backslash'],
   ',': [188, 'Comma'], '.': [190, 'Period'], '/': [191, 'Slash'],
@@ -386,6 +393,10 @@ function chordToInit(chord) {
     init.key = base;
     init.code = base;
     init.keyCode = 111 + Number(base.slice(1));
+  } else if (MM_NAMED_KEYS[base] !== undefined) {
+    init.key = base === 'Space' ? ' ' : base;
+    init.code = base;
+    init.keyCode = MM_NAMED_KEYS[base];
   } else if (KEYCODES[base]) {
     init.key = base;
     init.code = KEYCODES[base][1];
@@ -397,6 +408,16 @@ function chordToInit(chord) {
   return init;
 }
 
+/**
+ * The chord used to check whether Figma honours a synthesised keystroke.
+ *
+ * It has to be something Figma certainly handles, so that a negative result
+ * means "ignored" rather than "not bound", and something that changes nothing:
+ * quick actions opens a searchable menu, alters no document, and closes on
+ * Escape, which the check sends straight afterwards.
+ */
+const MM_PROBE = { open: 'Mod+/', close: 'Escape' };
+
 const MM_KEYMAP = {
   isMac: MM_IS_MAC,
   chordOf: mmChord,
@@ -407,6 +428,7 @@ const MM_KEYMAP = {
   chordsOf: mmChordsOf,
   defaultRuleIds: mmDefaultRuleIds,
   RULES: MM_RULES,
+  PROBE: MM_PROBE,
   RESERVED: MM_BROWSER_RESERVED,
   KEEPS: MM_FIGMA_KEEPS,
 };

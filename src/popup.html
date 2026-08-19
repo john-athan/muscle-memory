@@ -8,16 +8,22 @@
 </head>
 <body class="popup">
   <div class="pop-head">
-    <strong>Muscle Memory</strong>
+    <div>
+      <strong>Conventional keymap</strong>
+      <small id="state"></small>
+    </div>
     <label class="switch">
-      <input type="checkbox" id="keymap-enabled">
+      <input type="checkbox" id="keymap-enabled" aria-label="Conventional keymap">
       <span class="slider" aria-hidden="true"></span>
     </label>
   </div>
-  <p class="pop-state" id="state"></p>
+
+  <div class="ledger" id="ledger"></div>
+
   <div class="pop-foot">
-    <button type="button" id="open-options" class="link-btn">All settings</button>
+    <button type="button" id="open-options" class="linkish">All settings</button>
   </div>
+
   <script src="keymap.js"></script>
   <script src="settings.js"></script>
   <script src="popup.js"></script>

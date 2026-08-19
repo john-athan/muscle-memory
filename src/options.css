@@ -1,40 +1,72 @@
-/* Light and dark are both first-class: an options page opens next to whatever
-   the browser is already showing, and arriving in the wrong one reads as a
-   bug. Every colour is a token so the dark block only has to restate values,
-   never rules. */
+/* Muscle Memory, shared by the options page and the popup.
+ *
+ * Two ideas carry the whole design.
+ *
+ * The keycap is a real object rather than a bordered box. Everything here is
+ * about which application gets a physical key, so the key is drawn with a
+ * front edge and it depresses when pressed. It is the one place the design
+ * spends any boldness; everything around it stays quiet.
+ *
+ * Colour is meaning, not decoration. Violet marks a chord handed back to the
+ * browser, teal marks one deliberately left with Figma, and red appears
+ * exactly once, on the chord that can destroy work. A reader who learns those
+ * three can scan the page without reading it.
+ *
+ * Type carries the same discipline: the monospace face is reserved for
+ * machine facts, which is to say chords, labels and counts. Prose is set in
+ * the interface face. Weight tells you what kind of thing you are looking at.
+ */
 
 :root {
   color-scheme: light dark;
 
-  --bg: #f6f7f9;
+  --paper: #e9ebee;
   --card: #ffffff;
-  --ink: #16181d;
-  --ink-soft: #5b6270;
-  --ink-faint: #878e9c;
-  --line: #e3e6eb;
-  --accent: #2b6cf6;
-  --accent-ink: #ffffff;
-  --good: #1a7f4b;
-  --warn: #9a6100;
-  --chip: #eef1f6;
-  --radius: 12px;
-  --shadow: 0 1px 2px rgba(16, 20, 30, .05), 0 8px 24px rgba(16, 20, 30, .05);
+  --sunk: #f3f5f7;
+  --ink: #14161b;
+  --soft: #545c6a;
+  --faint: #6b7280;
+  --line: #d6dae0;
+  --line-soft: #e6e9ed;
+
+  --claim: #4f2fe8;
+  --claim-wash: #efecfe;
+  --keep: #0f766e;
+  --keep-wash: #e6f2f0;
+  --danger: #b32d1b;
+  --danger-wash: #fbecea;
+
+  --cap-face: #fbfcfd;
+  --cap-side: #c9ced6;
+  --cap-edge: #aeb5bf;
+  --cap-ink: #14161b;
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14161a;
-    --card: #1c1f25;
+  :root:not([data-theme="light"]) {
+    --paper: #101216;
+    --card: #191c22;
+    --sunk: #14171c;
     --ink: #eef1f5;
-    --ink-soft: #a8b0bd;
-    --ink-faint: #7c8492;
-    --line: #2b2f37;
-    --accent: #5b91ff;
-    --accent-ink: #0d1017;
-    --good: #4cc98a;
-    --warn: #e0a940;
-    --chip: #262a32;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    --soft: #a6aeba;
+    --faint: #949cab;
+    --line: #2b3038;
+    --line-soft: #23272e;
+
+    --claim: #9b86ff;
+    --claim-wash: #22203a;
+    --keep: #4fc7b8;
+    --keep-wash: #122a29;
+    --danger: #f2846f;
+    --danger-wash: #2f1c19;
+
+    --cap-face: #2b313b;
+    --cap-side: #171a20;
+    --cap-edge: #0d0f13;
+    --cap-ink: #eef1f5;
   }
 }
 
@@ -42,139 +74,221 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
-  font: 15px/1.55 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.55 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
-.page { max-width: 760px; margin: 0 auto; padding: 40px 24px 64px; }
+/* ------------------------------------------------------------- the keycap */
 
-.head { margin-bottom: 28px; }
-h1 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 4px; }
-.sub { margin: 0; color: var(--ink-soft); }
-
-.notice {
-  background: var(--chip);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  color: var(--ink-soft);
+.cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 12.5px/1 var(--mono);
+  letter-spacing: .02em;
+  color: var(--cap-ink);
+  background: var(--cap-face);
+  padding: .58em .62em .46em;
+  border-radius: 6px;
+  border: 1px solid var(--cap-edge);
+  box-shadow: 0 2px 0 var(--cap-side), 0 3px 0 var(--cap-edge);
+  position: relative;
+  white-space: nowrap;
+  flex: none;
 }
-.notice strong { color: var(--ink); }
+
+/* ---------------------------------------------------------------- shell */
+
+.page { max-width: 780px; margin: 0 auto; padding: 44px 24px 72px; }
+
+.wordmark {
+  font: 800 27px/1 var(--sans);
+  letter-spacing: -.035em;
+  margin: 0 0 5px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.wordmark .glyph {
+  width: 26px; height: 26px; flex: none;
+  border-radius: 7px; background: var(--claim);
+  display: grid; place-items: center;
+  color: #fff; font: 600 13px/1 var(--mono);
+}
+.tagline { margin: 0 0 26px; color: var(--soft); font-size: 15px; }
+
+.eyebrow {
+  font: 600 10px/1 var(--mono);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 12px;
+}
 
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: 4px;
   padding: 22px 24px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
-.card h2 { font-size: 17px; margin: 0 0 4px; letter-spacing: -.01em; }
-.lede { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; max-width: 58ch; }
-.note { margin: 8px 0 12px; color: var(--ink-soft); font-size: 13px; max-width: 62ch; }
+.card h2 { font: 700 16px/1.3 var(--sans); letter-spacing: -.012em; margin: 0 0 5px; }
+.lede { margin: 0 0 16px; color: var(--soft); font-size: 14px; max-width: 60ch; }
 
-.card-head { display: flex; gap: 24px; align-items: flex-start; justify-content: space-between; }
-.card-head .lede { margin-bottom: 8px; }
+.card-head {
+  display: flex; gap: 22px; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 4px;
+}
 
-/* The single setting, given the weight of one. */
-.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: none; padding-top: 2px; }
+/* --------------------------------------------------------- the switch */
+
+.switch { display: flex; align-items: center; gap: 9px; cursor: pointer; flex: none; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .slider {
-  width: 46px; height: 27px; border-radius: 99px;
-  background: var(--line); position: relative; transition: background .16s ease;
+  width: 44px; height: 26px; border-radius: 99px;
+  /* An off state at 1.25:1 is not a state anyone can read. This is the most
+     important control in the product and both of its positions have to be
+     legible at a glance, in both themes. */
+  background: #8a92a0;
+  border: 1px solid rgba(0, 0, 0, .12);
+  position: relative;
+  transition: background .16s ease;
 }
 .slider::after {
-  content: ""; position: absolute; inset: 3px auto 3px 3px; width: 21px;
-  border-radius: 50%; background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.28);
+  content: ""; position: absolute; inset: 3px auto 3px 3px; width: 18px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
   transition: transform .16s ease;
 }
-.switch input:checked + .slider { background: var(--accent); }
-.switch input:checked + .slider::after { transform: translateX(19px); }
-.switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 3px; }
-.switch-label { font-size: 13px; color: var(--ink-soft); min-width: 22px; }
-
-.detail { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 12px; }
-.detail summary {
-  cursor: pointer; font-size: 14px; font-weight: 550; color: var(--ink);
-  list-style: none; display: flex; align-items: center; gap: 8px; padding: 4px 0;
+.switch input:checked + .slider { background: var(--claim); }
+.switch input:checked + .slider::after { transform: translateX(18px); }
+.switch input:focus-visible + .slider { outline: 2px solid var(--claim); outline-offset: 3px; }
+.switch-state {
+  font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--faint); min-width: 22px;
 }
-.detail summary::-webkit-details-marker { display: none; }
-.detail summary::before {
-  content: "›"; display: inline-block; transition: transform .15s ease;
-  color: var(--ink-faint); font-size: 17px; line-height: 1;
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .slider { background: #5a616d; border-color: rgba(0, 0, 0, .4); }
 }
-.detail[open] summary::before { transform: rotate(90deg); }
-.count { color: var(--ink-faint); font-weight: 400; font-size: 13px; }
 
-.rules { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+/* --------------------------------------------------- the chord ledger */
 
-.rule {
+.ledger { display: flex; flex-direction: column; }
+
+.claim {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 4px 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
+  gap: 3px 13px;
+  padding: 13px 0 13px 12px;
+  border-left: 3px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
+}
+.claim:last-child { border-bottom: 0; }
+.claim.to-browser { border-left-color: var(--claim); }
+.claim.to-figma { border-left-color: var(--keep); }
+.claim.is-danger { border-left-color: var(--danger); }
+
+.claim > .cap { grid-row: 1 / span 2; align-self: start; justify-self: start; margin-top: 1px; }
+.claim-gets { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.claim-then { font-size: 13px; color: var(--soft); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.claim-then .cap { font-size: 11px; padding: .45em .5em .35em; }
+
+.flag {
+  font: 600 9.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 6px; border-radius: 3px;
+  background: var(--sunk); color: var(--faint); border: 1px solid var(--line-soft);
+}
+.flag-danger { background: var(--danger-wash); color: var(--danger); border-color: transparent; }
+.flag-native { background: var(--keep-wash); color: var(--keep); border-color: transparent; }
+
+/* ------------------------------------------------------------ details */
+
+details { border-top: 1px solid var(--line-soft); margin-top: 6px; }
+details summary {
+  cursor: pointer; font: 600 13px/1 var(--sans); color: var(--soft);
+  list-style: none; display: flex; align-items: center; gap: 8px; padding: 13px 0;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "+"; font: 600 13px/1 var(--mono); color: var(--faint); width: 10px;
+}
+details[open] summary::before { content: "\2212"; }
+details summary:focus-visible { outline: 2px solid var(--claim); outline-offset: 2px; }
+.count { color: var(--faint); font: 400 12px/1 var(--mono); }
+
+/* ------------------------------------------------------------ controls */
+
+.rule {
+  display: grid; grid-template-columns: auto 1fr; gap: 3px 11px;
+  padding: 12px 0; border-bottom: 1px solid var(--line-soft);
 }
 .rule:last-child { border-bottom: 0; }
-.rule-toggle { grid-row: 1 / span 3; align-self: start; padding-top: 2px; }
-.rule-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rule-box { grid-row: 1 / span 3; align-self: start; padding-top: 3px; }
+.rule-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font-size: 14px; }
+.rule-note, .rule-why { font-size: 12.5px; color: var(--soft); max-width: 60ch; }
+.rule-why { color: var(--faint); }
 
-kbd {
-  font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: var(--chip); border: 1px solid var(--line); border-bottom-width: 2px;
-  border-radius: 6px; padding: 5px 7px; color: var(--ink); white-space: nowrap;
+fieldset { border: 0; padding: 0; margin: 0 0 6px; }
+legend { font: 600 13px/1 var(--sans); padding: 0 0 4px; }
+
+.opt { display: flex; gap: 11px; align-items: flex-start; padding: 9px 0; cursor: pointer; }
+.opt input { margin: 2px 0 0; accent-color: var(--claim); flex: none; width: 15px; height: 15px; }
+.opt span { display: flex; flex-direction: column; gap: 2px; }
+.opt strong { font-weight: 600; font-size: 14px; }
+.opt small { color: var(--soft); font-size: 12.5px; }
+.opt input:focus-visible { outline: 2px solid var(--claim); outline-offset: 2px; }
+
+/* ---------------------------------------------------------- diagnostics */
+
+.verdict {
+  background: var(--sunk); border: 1px solid var(--line);
+  border-left: 3px solid var(--faint);
+  border-radius: 3px; padding: 13px 15px; font-size: 13.5px; color: var(--soft);
 }
-.arrow { color: var(--ink-faint); }
-.rule-browser { font-weight: 550; }
-.rule-figma, .rule-why { font-size: 13px; color: var(--ink-soft); max-width: 62ch; }
-.rule-why { color: var(--ink-faint); }
-.tag {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
-  padding: 2px 6px; border-radius: 5px; font-weight: 600;
+.verdict.good { border-left-color: var(--keep); }
+.verdict.bad { border-left-color: var(--danger); }
+.verdict.mixed { border-left-color: var(--danger); }
+.verdict b { color: var(--ink); display: block; margin-bottom: 3px; font-size: 14px; }
+
+.btn {
+  font: 600 13px/1 var(--sans); background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 6px; padding: 9px 14px; cursor: pointer; margin-top: 12px;
 }
-.tag-destructive { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
-.tag-native { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+.btn:hover { border-color: var(--claim); color: var(--claim); }
+.btn:active { transform: translateY(1px); border-bottom-width: 1px; margin-bottom: 1px; }
+.btn:focus-visible { outline: 2px solid var(--claim); outline-offset: 2px; }
+.btn[disabled] { opacity: .5; cursor: default; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; }
+/* ------------------------------------------------------------- welcome */
 
-.field { border: 0; padding: 0; margin: 0 0 18px; }
-.field legend { font-weight: 550; padding: 0 0 8px; font-size: 14px; }
-
-.radio, .check {
-  display: flex; gap: 11px; align-items: flex-start;
-  padding: 9px 0; cursor: pointer;
+/* Same ledger component as the rest of the page, deliberately. The first
+   thing a new user sees should be the thing they will keep coming back to,
+   in the form they will keep seeing it. */
+.welcome {
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--claim);
+  border-radius: 4px; padding: 20px 24px; margin-bottom: 16px;
 }
-.radio input, .check input, .rule-toggle input { margin: 2px 0 0; accent-color: var(--accent); flex: none; width: 16px; height: 16px; }
-.radio span, .check span { display: flex; flex-direction: column; gap: 2px; }
-.radio small, .check small, .rule small { color: var(--ink-soft); font-size: 13px; }
+.welcome h2 { font: 700 16px/1.3 var(--sans); margin: 0 0 4px; }
+.welcome .after { margin: 14px 0 0; font-size: 13px; color: var(--faint); }
 
-.health {
-  font-size: 14px; color: var(--ink-soft);
-  background: var(--chip); border: 1px solid var(--line);
-  border-radius: 9px; padding: 12px 14px;
-}
-.health strong { color: var(--ink); }
-.health .verdict-good { color: var(--good); font-weight: 600; }
-.health .verdict-bad { color: var(--warn); font-weight: 600; }
+/* -------------------------------------------------------------- footer */
 
 .foot {
-  display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
-  margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line);
-  font-size: 13px; color: var(--ink-faint);
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line);
+  font: 12.5px/1.5 var(--mono); color: var(--faint);
 }
-.foot a { color: var(--ink-soft); }
-.link-btn {
-  background: none; border: 0; padding: 0; cursor: pointer;
-  color: var(--ink-faint); font: inherit; text-decoration: underline;
-  text-underline-offset: 2px; margin-left: auto;
+.foot a { color: var(--soft); }
+.linkish {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  color: var(--faint); text-decoration: underline; text-underline-offset: 2px;
+  margin-left: auto;
 }
-.link-btn:hover { color: var(--ink); }
+.linkish:hover { color: var(--ink); }
+.disclaimer { flex-basis: 100%; margin: 0; }
 
-:disabled + span, .is-off { opacity: .45; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
-}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
