@@ -64,7 +64,9 @@ needs no emulation at all.
 
 ## Install
 
-Not yet on the Chrome Web Store. Until then:
+Not yet on the Chrome Web Store. The listing is prepared and the package
+validates, but submitting it needs a developer account, so it is a manual step:
+see [meta/PUBLISHING.md](meta/PUBLISHING.md). Until then:
 
 1. `git clone https://github.com/john-athan/muscle-memory.git`
 2. Open `chrome://extensions`, switch on Developer mode
@@ -98,7 +100,9 @@ Chrome and Edge 116 or newer. Firefox is not supported yet: it needs a
 ```sh
 npm test         # 80 tests, no dependencies
 npm run check    # referenced files, syntax, tests
-npm run package  # muscle-memory.zip for the store
+npm run package  # muscle-memory.zip, validated against the store's limits
+
+sh meta/make-store-art.sh   # regenerate the listing artwork
 
 cargo run --release --manifest-path tools/icons/Cargo.toml   # regenerate icons
 ```

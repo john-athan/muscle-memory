@@ -45,10 +45,10 @@ jobs:
       - name: Test
         run: npm test
 
+      # Builds the store package and checks it against the store's own limits,
+      # so a rejection is found here rather than after a multi-day review.
       - name: The package really contains what it claims
-        run: |
-          npm run package
-          unzip -l muscle-memory.zip
+        run: npm run package
 
   icons:
     runs-on: ubuntu-latest

@@ -11,6 +11,6 @@
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
     "check": "node scripts/check-assets.mjs && for f in src/*.js test/*.test.js scripts/*.mjs; do node --check \"$f\" || exit 1; done && npm test",
-    "package": "rm -f muscle-memory.zip && zip -r muscle-memory.zip manifest.json src icons -x '*.DS_Store'"
+    "package": "rm -f muscle-memory.zip && zip -rq muscle-memory.zip manifest.json src icons -x '*.DS_Store' && node scripts/check-package.mjs muscle-memory.zip"
   }
 }

@@ -81,6 +81,17 @@ Remote code: none. No code is fetched or executed from outside the package.
 Data collection: none of the disclosure categories apply. The extension makes
 no network requests.
 
+## Artwork
+
+Built by `sh meta/make-store-art.sh` from the HTML in this directory, using the
+same design tokens as the extension itself.
+
+- Screenshots: `screenshots/store-1-problem.png`, `store-2-keys.png`, `store-3-popup.png` (1280x800)
+- Small promo tile: `screenshots/store-promo-small.png` (440x280)
+- Marquee promo tile: `screenshots/store-promo-marquee.png` (1400x560)
+
+See [PUBLISHING.md](PUBLISHING.md) for the submission steps.
+
 ## Links
 
 - Homepage: https://john-athan.github.io/muscle-memory

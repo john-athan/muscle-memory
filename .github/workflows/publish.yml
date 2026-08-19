@@ -1,0 +1,123 @@
+name: Publish
+
+# Uploads a tagged version to the Chrome Web Store.
+#
+# Inert until four secrets exist, and deliberately so: an extension is
+# published under a person's name, to the public, and un-publishing is not a
+# clean undo. The job checks for credentials first and exits successfully
+# without them, so adding this file changes nothing until somebody decides it
+# should. See meta/PUBLISHING.md for how to create them.
+#
+# Uses the Chrome Web Store API through curl rather than a third-party action,
+# for the same reason the extension has no dependencies: this step handles a
+# refresh token, and the fewer parties in that path the better.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish after uploading, rather than leaving a draft"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Are there credentials?
+        id: creds
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+        run: |
+          if [ -n "$CLIENT_ID" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "No Chrome Web Store credentials configured. Nothing to do."
+            echo "See meta/PUBLISHING.md to set them up."
+          fi
+
+      - name: Check the tag matches the manifest
+        if: steps.creds.outputs.have == 'yes' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF#refs/tags/v}"
+          manifest=$(node -p "require('./manifest.json').version")
+          if [ "$tag" != "$manifest" ]; then
+            echo "Tag v$tag does not match manifest version $manifest."
+            exit 1
+          fi
+          echo "Publishing version $manifest."
+
+      - name: Build and validate the package
+        if: steps.creds.outputs.have == 'yes'
+        run: |
+          npm run check
+          npm run package
+          node scripts/check-package.mjs muscle-memory.zip
+
+      - name: Upload to the store
+        if: steps.creds.outputs.have == 'yes'
+        env:
+          EXT_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          set -eu
+          token=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+            -d "client_id=$CLIENT_ID" \
+            -d "client_secret=$CLIENT_SECRET" \
+            -d "refresh_token=$REFRESH_TOKEN" \
+            -d "grant_type=refresh_token" | jq -r .access_token)
+          if [ "$token" = "null" ] || [ -z "$token" ]; then
+            echo "Could not exchange the refresh token for an access token."
+            exit 1
+          fi
+
+          result=$(curl -sS -X PUT \
+            -H "Authorization: Bearer $token" \
+            -H "x-goog-api-version: 2" \
+            -T muscle-memory.zip \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$EXT_ID")
+          echo "$result" | jq .
+          state=$(echo "$result" | jq -r .uploadState)
+          if [ "$state" != "SUCCESS" ]; then
+            echo "Upload failed."
+            exit 1
+          fi
+
+      # Separate from the upload on purpose. A failed publish leaves a
+      # perfectly good draft in the dashboard to look at, rather than an
+      # unexplained gap between a green tag and a store page that never moved.
+      - name: Publish
+        if: |
+          steps.creds.outputs.have == 'yes' &&
+          (startsWith(github.ref, 'refs/tags/v') || inputs.publish)
+        env:
+          EXT_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          set -eu
+          token=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+            -d "client_id=$CLIENT_ID" \
+            -d "client_secret=$CLIENT_SECRET" \
+            -d "refresh_token=$REFRESH_TOKEN" \
+            -d "grant_type=refresh_token" | jq -r .access_token)
+          curl -sS -X POST \
+            -H "Authorization: Bearer $token" \
+            -H "x-goog-api-version: 2" \
+            -H "Content-Length: 0" \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/$EXT_ID/publish" | jq .
