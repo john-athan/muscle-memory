@@ -67,7 +67,10 @@ function boot({ platform = 'MacIntel', stored = null, urlPath = '/design/abc/Dec
       observe() { sandbox.observing = true; }
       disconnect() { sandbox.observing = false; }
     },
-    KeyboardEvent: class { constructor(type) { this.type = type; } },
+    // The init is copied onto the event, not discarded: a rehome that pressed
+    // the wrong chord at Figma would otherwise look identical to one that
+    // pressed the right one.
+    KeyboardEvent: class { constructor(type, init) { this.type = type; Object.assign(this, init || {}); } },
     WheelEvent: class { constructor(type) { this.type = type; } },
     chrome: {
       runtime: { lastError: null, id: 'test-extension-id' },
@@ -180,9 +183,32 @@ test('reclaiming takes the event from the page WITHOUT preventing the default', 
 
 test('a chord with no rule is left completely untouched', () => {
   const { listeners } = boot();
-  const e = keydown('KeyD', { meta: true }); // duplicate: Figma keeps this
+  const e = keydown('KeyG', { meta: true }); // group: Figma keeps this
   listeners.window.keydown[0].fn(e);
-  assert.deepEqual(e.calls, [], 'Cmd+D must reach Figma unchanged');
+  assert.deepEqual(e.calls, [], 'Cmd+G must reach Figma unchanged');
+});
+
+test('Cmd+D bookmarks, and Cmd+Opt+D duplicates in its place', async () => {
+  // The pair has to be tested together. Reclaiming the chord without the
+  // rehome landing would leave duplicate with no keyboard route at all,
+  // which is a worse trade than the one this rule is making.
+  const { listeners, dispatched } = boot();
+  const onKeyDown = listeners.window.keydown[0].fn;
+
+  const bookmark = keydown('KeyD', { meta: true });
+  onKeyDown(bookmark);
+  assert.ok(bookmark.calls.includes('stopImmediatePropagation'), 'Figma would still duplicate');
+  assert.ok(!bookmark.calls.includes('preventDefault'), 'Chrome would not bookmark');
+
+  const duplicate = keydown('KeyD', { meta: true, alt: true });
+  onKeyDown(duplicate);
+  assert.ok(duplicate.calls.includes('stopImmediatePropagation'), 'the rehome did not fire');
+
+  // The synthetic press is deferred to the next task, so that Figma sees it
+  // after this keystroke has finished rather than nested inside it.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.ok(dispatched.some((d) => d.key === 'd' && d.metaKey && !d.altKey),
+    'Cmd+Opt+D did not press Cmd+D at Figma');
 });
 
 test('the master switch off means no keystroke is touched', () => {

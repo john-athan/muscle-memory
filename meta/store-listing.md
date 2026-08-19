@@ -28,15 +28,17 @@ WHAT COMES BACK
   where Figma used to keep it and still answers to.
 - Cmd+R reloads. Rename moves to F2.
 - Cmd+F finds on the page. Figma's own file search stays on Cmd+/.
+- Cmd+D bookmarks the file instead of duplicating a slide. Duplicate moves one
+  modifier over, to Cmd+Opt+D.
 - Cmd+S saves the page. Figma binds nothing there at all.
 - Cmd+[ and Cmd+] go back and forward, if you want them to. Off by default,
   because layer order is the more useful reading of those keys.
 
 WHAT STAYS WITH FIGMA
 
-Cmd+D, Cmd+G, Cmd+Shift+G, Cmd+=, Cmd+- and Cmd+0. On a canvas those mean
-duplicate, group, ungroup and zoom, and that is the meaning you expect. The rule is not
-that the browser always wins. It is that the expected meaning wins.
+Cmd+G, Cmd+Shift+G, Cmd+=, Cmd+- and Cmd+0. On a canvas those mean group,
+ungroup and zoom, and that is the meaning you expect. The rule is not that the
+browser always wins. It is that the expected meaning wins.
 
 ALSO
 

@@ -115,18 +115,25 @@ const MM_BROWSER_RESERVED = ['Mod+N', 'Mod+T', 'Mod+W', 'Mod+Q', 'Mod+Shift+N', 
  * Chords Figma is right to keep.
  *
  * The rule the whole keymap turns on is not "the browser always wins" -- it is
- * "the meaning you expect wins". Inside a canvas, Cmd+D means duplicate and
- * Cmd+G means group, in Figma exactly as in every design tool for thirty
- * years; the browser's bookmark and find-next are the surprising readings, and
- * both have another way in. Cmd+= / Cmd+- / Cmd+0 are the same story: zooming
- * the canvas is what you meant, zooming the chrome around it is not.
+ * "the meaning you expect wins". Inside a canvas Cmd+G means group, in Figma
+ * exactly as in every design tool for thirty years, and the browser's
+ * find-next is the surprising reading. Cmd+= / Cmd+- / Cmd+0 are the same
+ * story: zooming the canvas is what you meant, zooming the chrome around it is
+ * not.
+ *
+ * Cmd+D was on this list, argued the same way. It came off, and the argument
+ * is worth keeping because it shows where the line actually falls. Duplicate
+ * really is the design-tool reading. But bookmarking is not one application's
+ * convention competing with another's: every browser on both platforms has
+ * bound Cmd+D to it for twenty years, which is a stronger claim than any
+ * design tool can make, and pressing it and getting a duplicated slide is the
+ * exact failure this extension exists to stop. Duplicate did not lose its
+ * home, it moved one modifier over. See the `duplicate` rule below.
  *
  * These are listed rather than merely omitted so the options page can show
  * them as deliberate, and say why.
  */
 const MM_FIGMA_KEEPS = [
-  { chord: 'Mod+D', figma: 'Duplicate selection', browser: 'Bookmark this page',
-    why: 'Duplicate is the design-tool reading of Cmd+D. Bookmarking is still on the star in the address bar.' },
   { chord: 'Mod+G', figma: 'Group selection', browser: 'Find next',
     why: 'Group is the design-tool reading. Find next is Enter inside the find bar.' },
   { chord: 'Mod+Shift+G', figma: 'Ungroup selection', browser: 'Find previous',
@@ -182,6 +189,16 @@ const MM_RULES = [
     destructive: false,
     rehome: { chord: 'Mod+Alt+F', to: 'Mod+F', via: 'synthetic' },
     why: 'Figma’s own quick actions on Cmd+/ also search the file, and are untouched.',
+  },
+  {
+    id: 'duplicate',
+    chord: 'Mod+D',
+    browser: 'Bookmark this page',
+    figma: 'Duplicate selection',
+    confirmed: true,
+    destructive: false,
+    rehome: { chord: 'Mod+Alt+D', to: 'Mod+D', via: 'synthetic' },
+    why: 'Duplicate moves one modifier over, to Cmd+Opt+D. Holding Alt and dragging a layer still duplicates it too, and that one needs no keyboard at all.',
   },
   {
     id: 'print',

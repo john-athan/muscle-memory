@@ -16,11 +16,16 @@ left needs a Google account, and cannot be done for you.
 ## Building the upload
 
 ```sh
-npm run check                       # referenced files, syntax, 80 tests
+npm run check                       # referenced files, syntax, 81 tests
 npm run package                     # muscle-memory.zip
 node scripts/check-package.mjs      # store limits, packed files, red flags
+sh meta/capture-ui.sh               # retake the options-page screenshot
 sh meta/make-store-art.sh           # listing artwork into screenshots/
 ```
+
+Run `capture-ui.sh` before the artwork whenever the keymap changed. Two of the
+three screenshots photograph the extension's own interface, and a listing that
+shows a rule table missing the rule people came for is worse than no listing.
 
 `check-package.mjs` refuses a package whose manifest exceeds a store field
 limit, references a file it did not pack, contains anything but the extension,

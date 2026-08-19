@@ -19,14 +19,16 @@ commands that lose one to a chord you already know.
 | `⇧⌘R` | Hard reload | Paste to Replace | `⌥⇧⌘V`, which Figma still ships |
 | `⌘R` | Reload | Rename selection | `F2` |
 | `⌘F` | Find on the page | Search the file | `⌥⌘F`, and `⌘/` still works |
+| `⌘D` | Bookmark this page | Duplicate selection | `⌥⌘D`, and ⌥-drag still duplicates |
 | `⌘S` | Save the page | nothing at all | nothing to move |
 | `⌘P` | Print | not confirmed | nothing to move |
 | `⌘[` `⌘]` | Back and forward | Send backward, bring forward | `⌥⌘[` `⌥⌘]` (off by default) |
 
-Left with Figma on purpose: `⌘D`, `⌘G`, `⇧⌘G`, `⌘=`, `⌘-`, `⌘0`. On a canvas
-those read as duplicate, group, ungroup and zoom, and that is the meaning you
-expect. The rule is not that the browser always wins. It is that the meaning
-you expect wins.
+Left with Figma on purpose: `⌘G`, `⇧⌘G`, `⌘=`, `⌘-`, `⌘0`. On a canvas those
+read as group, ungroup and zoom, and that is the meaning you expect. The rule
+is not that the browser always wins. It is that the meaning you expect wins.
+`⌘D` was on that list once, and lost the argument: every browser on both
+platforms bookmarks with it, which outweighs one application's reading.
 
 Never at risk: `⌘N`, `⌘T`, `⌘W`, `⌘Q`. Chrome resolves those above the page, so
 no website can take them.

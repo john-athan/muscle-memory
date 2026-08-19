@@ -6,8 +6,9 @@
 # the design is one edit rather than a trip through an image editor.
 #
 # ui-keys.png and ui-popup.png are real captures of the extension's own
-# interface, taken at 2x and embedded by shot-2 and shot-3. Recapture them
-# when the interface changes.
+# interface, taken at 2x and embedded by shot-2 and shot-3. A rule added to
+# the keymap changes what the options page shows, so ui-keys.png goes stale
+# on its own: run `sh meta/capture-ui.sh` first, which retakes it.
 #
 # The listing icon is built here rather than by tools/icons because it carries
 # the ⇧⌘R keycap, and that is type. The Rust generator draws geometry only, so
