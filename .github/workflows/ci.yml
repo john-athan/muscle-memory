@@ -8,13 +8,17 @@ on:
 permissions:
   contents: read
 
+# Third-party actions are pinned to commit SHAs rather than tags. A tag is
+# mutable and `@stable` is a branch, so whoever controls that repository would
+# otherwise choose what runs in this one. Dependabot bumps SHA pins the same
+# way it bumps tags, so this costs nothing to maintain.
 jobs:
   extension:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
 
@@ -52,12 +56,12 @@ jobs:
       run:
         working-directory: tools/icons
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Version comes from tools/icons/rust-toolchain.toml, which is pinned so
       # that a codegen change cannot move a pixel and fail this job on an
       # unrelated pull request.
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
 
       - name: Format
         run: cargo fmt --check

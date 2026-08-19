@@ -96,7 +96,7 @@ Chrome and Edge 116 or newer. Firefox is not supported yet: it needs a
 ## Development
 
 ```sh
-npm test         # 72 tests, no dependencies
+npm test         # 80 tests, no dependencies
 npm run check    # referenced files, syntax, tests
 npm run package  # muscle-memory.zip for the store
 

@@ -8,7 +8,7 @@ tab, in that order: a content script is injected at `document_start`, so a tab
 that was already open is still running the previous version.
 
 ```sh
-npm test                                                     # 72 tests, no dependencies
+npm test                                                     # 80 tests, no dependencies
 npm run check                                                # manifest, syntax, tests
 cargo run --release --manifest-path tools/icons/Cargo.toml   # regenerate icons
 ```
@@ -34,6 +34,11 @@ script enforces. Before opening a pull request, please:
 The invariants in `test/keymap.test.js` catch the mistakes that are silent at
 runtime: a chord reclaimed and also used as a destination, a destination the
 event constructor cannot express, two rules claiming one chord.
+
+`test/docs.test.js` will then fail until the README and the landing page
+mention the new chord. That is deliberate. Those tables are written by hand and
+had already drifted, each quietly dropping a different row, so adding a rule is
+meant to be a change to the documentation as well as to the code.
 
 ## Changing the banner patterns
 
