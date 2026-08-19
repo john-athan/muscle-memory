@@ -1,0 +1,8 @@
+# Pinned, because CI asserts the committed PNGs are byte-identical to what
+# this crate produces. Float codegen is part of that output, so a floating
+# toolchain would eventually fail the check on an unrelated pull request with
+# an error message blaming the icons. Bump this deliberately, and commit the
+# regenerated icons in the same change if the bytes move.
+[toolchain]
+channel = "1.90.0"
+components = ["clippy", "rustfmt"]

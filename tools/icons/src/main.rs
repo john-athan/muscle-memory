@@ -108,19 +108,20 @@ fn stroke(pixmap: &mut Pixmap, path: &tiny_skia::Path, color: [u8; 3], width: f3
     let mut paint = Paint::default();
     paint.set_color(rgb(color));
     paint.anti_alias = true;
-    let stroke = Stroke {
+    let opts = Stroke {
         width,
         line_cap: LineCap::Round,
         line_join: LineJoin::Round,
         ..Stroke::default()
     };
-    pixmap.stroke_path(path, &paint, &stroke, Transform::identity(), None);
+    pixmap.stroke_path(path, &paint, &opts, Transform::identity(), None);
 }
 
 /// One icon, drawn large and returned at its final size.
 fn keycap(p: &Proportions) -> RgbaImage {
     let s = (p.size * SS) as f32;
-    let mut pixmap = Pixmap::new(p.size * SS, p.size * SS).expect("pixmap");
+    let mut pixmap =
+        Pixmap::new(p.size * SS, p.size * SS).expect("icon dimensions are non-zero constants");
 
     // The cap. A darker rounded rect behind a lighter one reads as a key's
     // front edge without needing a gradient or a shadow.
@@ -128,12 +129,22 @@ fn keycap(p: &Proportions) -> RgbaImage {
     let radius = s * 0.235;
     let mut pb = PathBuilder::new();
     rounded_rect(&mut pb, pad, pad, s - 2.0 * pad, s - 2.0 * pad, radius);
-    fill(&mut pixmap, &pb.finish().expect("cap"), ACCENT_DEEP);
+    fill(
+        &mut pixmap,
+        &pb.finish()
+            .expect("the cap outline is closed and non-empty"),
+        ACCENT_DEEP,
+    );
 
     let face_h = s - 2.0 * pad - if p.front_edge { s * 0.055 } else { 0.0 };
     let mut pb = PathBuilder::new();
     rounded_rect(&mut pb, pad, pad, s - 2.0 * pad, face_h, radius);
-    fill(&mut pixmap, &pb.finish().expect("face"), ACCENT);
+    fill(
+        &mut pixmap,
+        &pb.finish()
+            .expect("the cap face outline is closed and non-empty"),
+        ACCENT,
+    );
 
     // The command glyph. U+2318 is a square with a loop at each corner, and
     // building it from primitives keeps the output identical everywhere.
@@ -151,15 +162,29 @@ fn keycap(p: &Proportions) -> RgbaImage {
         for &sy in &[-1.0f32, 1.0] {
             let (ox, oy) = (c + sx * a / 2.0, c + sy * a / 2.0);
             let mut pb = PathBuilder::new();
-            pb.push_oval(Rect::from_ltrb(ox - rr, oy - rr, ox + rr, oy + rr).expect("loop"));
-            stroke(&mut pixmap, &pb.finish().expect("loop path"), GLYPH, w);
+            pb.push_oval(
+                Rect::from_ltrb(ox - rr, oy - rr, ox + rr, oy + rr)
+                    .expect("loop radius is positive, so the bounds are valid"),
+            );
+            stroke(
+                &mut pixmap,
+                &pb.finish().expect("an oval is always a usable path"),
+                GLYPH,
+                w,
+            );
         }
     }
     let mut pb = PathBuilder::new();
     pb.push_rect(
-        Rect::from_ltrb(c - a / 2.0, c - a / 2.0, c + a / 2.0, c + a / 2.0).expect("square"),
+        Rect::from_ltrb(c - a / 2.0, c - a / 2.0, c + a / 2.0, c + a / 2.0)
+            .expect("side length is positive, so the bounds are valid"),
     );
-    stroke(&mut pixmap, &pb.finish().expect("square path"), GLYPH, w);
+    stroke(
+        &mut pixmap,
+        &pb.finish().expect("a rectangle is always a usable path"),
+        GLYPH,
+        w,
+    );
 
     // tiny-skia stores premultiplied alpha; PNG wants it straight.
     let side = p.size * SS;

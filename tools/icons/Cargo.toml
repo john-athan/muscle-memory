@@ -14,4 +14,6 @@ tiny-skia = "0.12"
 image = { version = "0.25", default-features = false, features = ["png"] }
 
 [profile.release]
+# For generator speed only. A debug build produces the same pixels, but takes
+# long enough to be irritating when iterating on geometry.
 opt-level = 2

@@ -32,10 +32,11 @@ code{background:var(--line);padding:2px 5px;border-radius:4px;font-size:14px}
 <ul>
   <li>Your settings, in <code>chrome.storage.sync</code>, so they follow your
       Chrome profile between machines the way your bookmarks do.</li>
-  <li>Two counters, in <code>chrome.storage.local</code>: how many times the
-      extension pressed a shortcut on your behalf, and how many of those Figma
-      acted on. This is what the diagnostics panel reports. It records counts,
-      never keystrokes.</li>
+  <li>Three values, in <code>chrome.storage.local</code>: how many times the
+      extension pressed a shortcut on your behalf, how many of those Figma
+      acted on, and the name of the last one. That name comes from a fixed
+      list of four written in the source, so it can never contain anything you
+      typed. This is what the diagnostics panel reports.</li>
 </ul>
 
 <h2>What it does not do</h2>
@@ -43,16 +44,21 @@ code{background:var(--line);padding:2px 5px;border-radius:4px;font-size:14px}
   <li>No analytics, no telemetry, no error reporting, no unique identifier.</li>
   <li>No network requests of any kind. The extension declares no host
       permissions and cannot reach a remote server.</li>
-  <li>No reading of your Figma files, designs, comments or account. It inspects
-      keyboard and mouse events, and the wording of banners, and nothing else.</li>
+  <li>No reading of your Figma files, designs, comments or account. To find
+      the banners it can hide, it does read the text of page elements in
+      memory and test three fixed patterns against them, on editor pages only.
+      Nothing read that way is stored, kept, or sent anywhere.</li>
   <li>Nothing is shared with anyone, because nothing leaves your machine.</li>
 </ul>
 
 <h2>Permissions</h2>
 <p>
-  The extension requests one permission, <code>storage</code>, for the settings
-  above. Its content script runs only on <code>figma.com</code>, which is
-  declared in the manifest rather than requested as a broad host permission.
+  One permission, <code>storage</code>, for the settings above. Site access is
+  limited to <code>www.figma.com</code> and nothing else: no
+  <code>&lt;all_urls&gt;</code>, no other domain. Chrome describes that access
+  as <em>"read and change your data on figma.com"</em>, which is what any
+  extension that touches a page has to ask for. What it does with it is read
+  keyboard and mouse events, and the wording of banners.
 </p>
 
 <h2>Removing your data</h2>

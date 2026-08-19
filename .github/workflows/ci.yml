@@ -18,52 +18,66 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Validate manifest.json is well-formed JSON
-        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'))"
-
-      - name: Check the manifest lists every script it ships
-        # A content script renamed in src/ but not in the manifest fails
-        # silently at load time, which is the one break users cannot diagnose.
-        run: |
-          node -e '
-            const fs = require("fs");
-            const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
-            for (const f of m.content_scripts[0].js.concat([m.background.service_worker])) {
-              if (!fs.existsSync(f)) { console.error("manifest references missing file: " + f); process.exit(1); }
-            }
-            console.log("manifest references " + (m.content_scripts[0].js.length + 1) + " files, all present");
-          '
+      # Every file the extension loads, checked against what is on disk.
+      # A path renamed in src/ but not in the manifest, or a stylesheet the
+      # options page links and nobody ships, fails silently at load time and
+      # is the one break a user cannot diagnose. The earlier version of this
+      # step checked the content scripts only, which is how the CSS and the
+      # popup's script list went unguarded.
+      - name: Every referenced file exists
+        run: node scripts/check-assets.mjs
 
       - name: Syntax-check every script
         run: |
-          for f in src/*.js test/*.test.js; do
+          for f in src/*.js test/*.test.js scripts/*.mjs; do
             node --check "$f" || exit 1
           done
+
+      - name: Syntax-check the provenance gate
+        # It runs only on tags and a monthly cron, so without this a syntax
+        # error surfaces at release time, in the job meant to gate the release.
+        run: python3 -m py_compile scripts/provenance-check.py
 
       - name: Test
         run: npm test
 
+      - name: The package really contains what it claims
+        run: |
+          npm run package
+          unzip -l muscle-memory.zip
+
   icons:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/icons
     steps:
       - uses: actions/checkout@v7
 
+      # Version comes from tools/icons/rust-toolchain.toml, which is pinned so
+      # that a codegen change cannot move a pixel and fail this job on an
+      # unrelated pull request.
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
 
       - name: Format
-        run: cargo fmt --manifest-path tools/icons/Cargo.toml --check
+        run: cargo fmt --check
 
       - name: Clippy
-        run: cargo clippy --manifest-path tools/icons/Cargo.toml -- -D warnings
+        run: cargo clippy --locked -- -D warnings
 
       - name: Icons in the tree match what the generator produces
         # The PNGs are committed so that loading the extension needs no
         # toolchain. That is only safe if they cannot drift from the source.
+        # --locked so the check is against pinned dependencies, and
+        # `git status` rather than `git diff` so a newly added size shows up
+        # as an untracked file instead of passing unnoticed.
         run: |
-          cargo run --release --quiet --manifest-path tools/icons/Cargo.toml
-          git diff --exit-code -- icons/ || {
-            echo "icons/ is out of date; run the generator and commit the result"
+          cargo run --locked --release
+          cd "$GITHUB_WORKSPACE"
+          if [ -n "$(git status --porcelain -- icons)" ]; then
+            echo "The generator's output no longer matches the committed icons."
+            echo "If this followed a dependency or toolchain bump, regenerate,"
+            echo "check the icons still look right, and commit them."
+            git status --porcelain -- icons
             exit 1
-          }
+          fi

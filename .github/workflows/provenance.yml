@@ -38,6 +38,10 @@ jobs:
       - name: Check provenance of new code
         env:
           GH_TOKEN: ${{ secrets.PROVENANCE_TOKEN || github.token }}
+          # Through the environment, never interpolated into the script. A
+          # ${{ }} expression is substituted before the shell parses the line,
+          # so a dispatch input of `x; curl ...` would simply run.
+          SINCE: ${{ github.event.inputs.since }}
         run: |
-          python3 scripts/provenance-check.py \
-            ${{ github.event.inputs.since && format('--since {0}', github.event.inputs.since) || '' }}
+          if [ -n "$SINCE" ]; then set -- --since "$SINCE"; fi
+          python3 scripts/provenance-check.py "$@"

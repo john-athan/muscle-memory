@@ -15,9 +15,12 @@
  * the canvas, or is most of the screen, or is a document root, is rejected
  * outright. The worst outcome available to this file is that a banner stays.
  *
- * These patterns were written against Figma's published copy and want a check
- * against a live session before each release; `npm run declutter-check` in the
- * README explains how. Nothing else in the extension depends on them.
+ * These patterns were written against Figma's published copy rather than
+ * against observed markup, so they want a look at a live session before each
+ * release: open an editor file, confirm each banner this claims to hide is in
+ * fact hidden, and confirm nothing else is. Nothing else in the extension
+ * depends on them, and CONTRIBUTING.md says what to do when one stops
+ * matching.
  */
 
 'use strict';
@@ -45,15 +48,32 @@ const MM_PATTERNS = [
 
 const MM_HIDDEN_ATTR = 'data-muscle-memory-hidden';
 
+/** Tags whose text is markup or data rather than something a person reads. */
+const MM_NEVER_MATCH = new Set(['SCRIPT', 'STYLE', 'HEAD', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'SVG']);
+
 /** Elements it is never acceptable to hide, however well the text matched. */
 function mmIsLoadBearing(el) {
   const tag = el.tagName;
   if (tag === 'HTML' || tag === 'BODY' || tag === 'MAIN') return true;
+  if (MM_NEVER_MATCH.has(tag)) return true;
   if (el.querySelector && el.querySelector('canvas')) return true;
   if (el.id === 'root' || el.id === 'react-page') return true;
   const r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
   if (r && r.width * r.height > 0.4 * (window.innerWidth * window.innerHeight)) return true;
   return false;
+}
+
+/**
+ * True when an element has no box yet, so its size cannot be judged.
+ *
+ * A node inserted this frame may not have been laid out, and a zero area
+ * would otherwise sail through the size guard above as though it were small.
+ * Callers treat this as "ask again later" rather than as a verdict.
+ */
+function mmUnmeasured(el) {
+  if (!el.getBoundingClientRect) return false;
+  const r = el.getBoundingClientRect();
+  return r.width === 0 && r.height === 0;
 }
 
 /**
@@ -74,7 +94,30 @@ function mmContainerFor(el, maxHops) {
   return best;
 }
 
-const mmSeen = new WeakSet();
+/**
+ * Put back anything hidden under a rule that is no longer switched on.
+ *
+ * Without this the checkboxes are a one-way door: hiding is an inline
+ * `display:none`, and turning the setting off only stopped new matches being
+ * hidden. Somebody unticking a box wants the banner back, which is the whole
+ * reason they unticked it.
+ */
+function mmUnhide(root, activeIds) {
+  if (!root || !root.querySelectorAll) return 0;
+  let shown = 0;
+  for (const el of root.querySelectorAll('[' + MM_HIDDEN_ATTR + ']')) {
+    if (activeIds.has(el.getAttribute(MM_HIDDEN_ATTR))) continue;
+    el.removeAttribute(MM_HIDDEN_ATTR);
+    if (el.style) el.style.removeProperty('display');
+    shown += 1;
+  }
+  return shown;
+}
+
+let mmSeen = new WeakSet();
+
+/** Forget what has been judged, so a re-enabled rule can match again. */
+function mmResetSeen() { mmSeen = new WeakSet(); }
 
 function mmHide(el, id) {
   if (!el || el.hasAttribute(MM_HIDDEN_ATTR)) return false;
@@ -105,12 +148,23 @@ function mmSweep(root, patterns) {
   const candidates = root.querySelectorAll('div,span,section,aside,a,p,h1,h2,h3,button');
   for (const el of candidates) {
     if (mmSeen.has(el)) continue;
+    if (MM_NEVER_MATCH.has(el.tagName)) { mmSeen.add(el); continue; }
+    // textContent concatenates the whole subtree, so reading it on a
+    // container costs a walk of everything beneath it, and the length cap
+    // below only rejects the result after that has been paid. A banner is
+    // shallow, so anything deeply nested is not one and can be skipped
+    // before the expensive read. Figma re-mounts subtrees of hundreds of
+    // nodes on every selection change, and this runs on that path.
+    if (el.childElementCount > 3) continue;
     const text = el.textContent;
     if (!text || text.length > 400) continue; // a banner is a sentence, not a page
+    // Not laid out yet: no verdict is possible, so leave it unjudged and let
+    // a later pass decide rather than hiding something of unknown size.
+    if (mmUnmeasured(el)) continue;
     mmSeen.add(el);
     for (const pattern of patterns) {
       if (!pattern.match.test(text)) continue;
-      const container = mmContainerFor(el, 6);
+      const container = mmContainerFor(el, 4);
       if (container && mmHide(container, pattern.id)) hidden += 1;
       break;
     }
@@ -126,6 +180,9 @@ const MM_SELECTORS = {
   PATTERNS: MM_PATTERNS,
   active: mmActivePatterns,
   sweep: mmSweep,
+  unhide: mmUnhide,
+  resetSeen: mmResetSeen,
+  neverMatch: MM_NEVER_MATCH,
   containerFor: mmContainerFor,
   isLoadBearing: mmIsLoadBearing,
 };

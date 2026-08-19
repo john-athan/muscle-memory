@@ -25,9 +25,8 @@ const MM_DEFAULTS = {
     rules: null, // null means "whatever keymap.js currently defaults to"
   },
   canvas: {
-    // 'figma'  leave it alone
-    // 'zoom'   wheel zooms, Shift+wheel pans -- what an external mouse expects
-    // 'pan'    wheel pans, Mod+wheel zooms -- what a trackpad expects
+    // 'figma'  leave the wheel alone: it pans, and a pinch zooms
+    // 'zoom'   a plain wheel zooms, Shift+wheel pans, for an external mouse
     scroll: 'figma',
     middleClickPan: true,
     rightClick: true,
@@ -56,7 +55,11 @@ function mmMerge(stored) {
  */
 function mmActiveRules(settings) {
   if (!settings.keymap.enabled) return new Set();
-  const ids = settings.keymap.rules || MM_KEYMAP.defaultRuleIds();
+  const stored = settings.keymap.rules;
+  // Anything but an array means the stored value is damaged, and `new Set` on
+  // it would throw from inside a settings callback, leaving the content script
+  // running on whatever it had before with no sign that anything went wrong.
+  const ids = Array.isArray(stored) ? stored : globalThis.MM_KEYMAP.defaultRuleIds();
   return new Set(ids);
 }
 

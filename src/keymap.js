@@ -26,6 +26,13 @@
 
 'use strict';
 
+const MM_PUNCTUATION = new Set(['[', ']', '\\', ',', '.', '/', '-', '=', '`', "'", ';']);
+
+const MM_CODE_PUNCTUATION = {
+  BracketLeft: '[', BracketRight: ']', Backslash: '\\', Comma: ',', Period: '.',
+  Slash: '/', Minus: '-', Equal: '=', Backquote: '`', Quote: "'", Semicolon: ';',
+};
+
 const MM_IS_MAC = typeof navigator !== 'undefined' &&
   /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
 
@@ -68,11 +75,22 @@ function mmChord(e) {
   return parts.join('+');
 }
 
+// Apple writes modifiers in the order Control, Option, Shift, Command, with
+// the key last, and every Mac menu bar in existence follows it. Our canonical
+// form leads with Mod because that is the axis rules are grouped by, so the
+// two orders differ and only one of them belongs in front of a person.
+const MM_MAC_ORDER = ['Ctrl', 'Alt', 'Shift', 'Mod'];
+
 /** How a chord should be written in the interface, per platform. */
 function mmChordLabel(chord) {
   if (!chord) return '';
-  return chord
-    .split('+')
+  let parts = chord.split('+');
+  if (MM_IS_MAC) {
+    const base = parts[parts.length - 1];
+    const mods = parts.slice(0, -1);
+    parts = MM_MAC_ORDER.filter((m) => mods.includes(m)).concat([base]);
+  }
+  return parts
     .map((p) => {
       if (p === 'Mod') return MM_IS_MAC ? '⌘' : 'Ctrl';
       if (p === 'Ctrl') return MM_IS_MAC ? '⌃' : 'Meta';
@@ -220,6 +238,69 @@ function mmDefaultRuleIds() {
 }
 
 /**
+ * Every chord string a keydown could reasonably be called.
+ *
+ * `code` names a physical position on a US layout. That is stable under
+ * modifiers but wrong under a remapped one: on Dvorak the key that types `r`
+ * sits on physical `KeyO`, so a code-only match would let Cmd+R through to
+ * Figma while Chrome reloaded anyway, firing both actions at once.
+ *
+ * So `key` leads, since with Cmd held it reports the plain letter, and `code`
+ * follows as a fallback for letters, digits and function keys. Punctuation is
+ * deliberately not taken from `code`: on a German layout physical
+ * BracketLeft types `ü`, and treating that as `[` would reclaim a chord the
+ * browser has nothing bound to, leaving a key that does nothing at all.
+ */
+function mmChordsOf(e) {
+  const mod = MM_IS_MAC ? e.metaKey : e.ctrlKey;
+  const ctrl = MM_IS_MAC ? e.ctrlKey : e.metaKey;
+  const prefix = [];
+  if (mod) prefix.push('Mod');
+  if (ctrl) prefix.push('Ctrl');
+  if (e.altKey) prefix.push('Alt');
+  if (e.shiftKey) prefix.push('Shift');
+
+  const out = [];
+  const add = (base) => {
+    if (!base) return;
+    const chord = prefix.concat([base]).join('+');
+    if (!out.includes(chord)) out.push(chord);
+  };
+
+  const key = typeof e.key === 'string' ? e.key : '';
+  if (/^[a-zA-Z0-9]$/.test(key)) add(key.toUpperCase());
+  else if (/^F\d+$/.test(key)) add(key);
+  else if (MM_PUNCTUATION.has(key)) add(key);
+
+  add(mmBaseFromCode(e.code, true));
+  return out;
+}
+
+/**
+ * The base name for a physical key, or '' if it has none we use.
+ *
+ * `lettersOnly` restricts the answer to letters, digits and function keys,
+ * whose position and meaning coincide on every layout worth supporting.
+ */
+function mmBaseFromCode(code, lettersOnly) {
+  const base = code || '';
+  if (base.startsWith('Key')) return base.slice(3).toUpperCase();
+  if (base.startsWith('Digit')) return base.slice(5);
+  if (/^F\d+$/.test(base)) return base;
+  if (lettersOnly) return '';
+  return MM_CODE_PUNCTUATION[base] || '';
+}
+
+/** Resolve a keydown directly, trying every name its chord could go by. */
+function mmResolveEvent(e, enabled, editing) {
+  for (const chord of mmChordsOf(e)) {
+    const decision = mmResolve(chord, enabled, editing);
+    if (decision) return decision;
+  }
+  return null;
+}
+
+/**
  * Resolve a keydown into what should happen to it.
  *
  * Returns one of:
@@ -250,6 +331,9 @@ function mmResolve(chord, enabled, editing) {
     // rehome is Figma's own second binding, so we must not intercept it --
     // Figma already handles it and stopping the event would break it.
     if (rule.rehome && rule.rehome.via === 'synthetic' && chord === rule.rehome.chord) {
+      // Same reasoning as the reclaim branch above: mid-sentence, F2 and
+      // Cmd+Opt+F are part of the text being typed, not canvas commands.
+      if (editing) return null;
       return { action: 'rehome', rule, chord: rule.rehome.to };
     }
   }
@@ -263,7 +347,19 @@ const KEYCODES = {
   "'": [222, 'Quote'], ';': [186, 'Semicolon'],
 };
 
-/** Turn a canonical chord string back into the fields a KeyboardEvent needs. */
+/**
+ * Turn a canonical chord string back into the fields a KeyboardEvent needs.
+ *
+ * `keyCode` and `which` are deprecated, and they are set here because plenty
+ * of handlers still read them, including code compiled from other languages.
+ * They are not members of the modern KeyboardEventInit, but the UI Events
+ * spec keeps them in a legacy partial dictionary and Chrome honours it:
+ * constructing with `keyCode: 82` yields `event.keyCode === 82`, where
+ * omitting it yields 0. Verified against Chrome rather than assumed, because
+ * the alternative, defining the properties on the event afterwards, silently
+ * does nothing: an accessor installed from an isolated world lives on that
+ * world's wrapper and the page reads through its own.
+ */
 function chordToInit(chord) {
   const parts = chord.split('+');
   const base = parts[parts.length - 1];
@@ -297,6 +393,7 @@ function chordToInit(chord) {
   } else {
     return null;
   }
+  init.which = init.keyCode;
   return init;
 }
 
@@ -306,6 +403,8 @@ const MM_KEYMAP = {
   chordToInit: chordToInit,
   label: mmChordLabel,
   resolve: mmResolve,
+  resolveEvent: mmResolveEvent,
+  chordsOf: mmChordsOf,
   defaultRuleIds: mmDefaultRuleIds,
   RULES: MM_RULES,
   RESERVED: MM_BROWSER_RESERVED,

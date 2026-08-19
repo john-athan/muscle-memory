@@ -27,15 +27,30 @@
   let settings = SETTINGS.merge(null);
   let active = SETTINGS.activeRules(settings);
 
-  // Set on events we generated, so the capture listener lets its own
-  // synthetic events through instead of resolving them a second time. The
-  // property lives on the isolated-world wrapper, so the page cannot see it
-  // and a page script cannot forge it.
-  const SYNTHETIC = '__mmSynthetic';
+  /**
+   * Every handler here acts on `event.isTrusted` and nothing else.
+   *
+   * The question worth asking is not "did I make this event?" but "did the
+   * user?". A private marker answers only the first, so a page script could
+   * dispatch its own Cmd+Shift+R and we would treat it as a keypress: enough
+   * to strand an entry in `swallowed` and eat the user's next real keyup, and
+   * enough to drive the diagnostics counters that this extension presents as
+   * a measurement rather than a claim.
+   *
+   * `isTrusted` read from an isolated world is authoritative. A page cannot
+   * forge it, and its attempts to patch Event.prototype apply to its own
+   * world only. It also covers our own dispatches, which are untrusted too,
+   * so it replaces the marker outright rather than sitting alongside it.
+   *
+   * The trade: keystrokes synthesised by assistive technology or by another
+   * extension are ignored as well. That is the correct reading of "the user
+   * pressed a key", but it is a behaviour choice, not an accident.
+   */
 
   // What we learned at runtime about whether Figma acts on synthesised
   // events. Reported in the options page rather than assumed. See rehome().
   const health = { attempts: 0, accepted: 0, lastChord: null };
+  let healthTimer = 0;
 
   /* ------------------------------------------------------------------ keys */
 
@@ -50,9 +65,11 @@
    * measurement of Figma's behaviour on this machine, this release, not a
    * guess -- and it is what the options page shows.
    *
-   * keyCode and which are not members of KeyboardEventInit and are dropped by
-   * the constructor, so they are pinned afterwards. They are deprecated and
-   * still widely read, including by code compiled from other languages.
+   * The legacy keyCode and which fields are set by the constructor, through
+   * the init dictionary that chordToInit builds. Assigning them to the event
+   * afterwards would look equivalent and do nothing at all: a property
+   * defined from an isolated world lives on that world's wrapper, and the
+   * page reads the event through its own.
    */
   function dispatchChord(chord) {
     const init = KEYMAP.chordToInit(chord);
@@ -63,12 +80,6 @@
 
     for (const type of ['keydown', 'keyup']) {
       const ev = new KeyboardEvent(type, init);
-      for (const prop of ['keyCode', 'which']) {
-        try {
-          Object.defineProperty(ev, prop, { get: () => init.keyCode, configurable: true });
-        } catch (_) { /* a browser that refuses is a browser that reads `code` */ }
-      }
-      ev[SYNTHETIC] = true;
       const notCancelled = target.dispatchEvent(ev);
       if (type === 'keydown') accepted = !notCancelled;
     }
@@ -80,53 +91,82 @@
     return accepted;
   }
 
-  /** True when a chord belongs to the text being typed rather than to the canvas. */
+  /**
+   * True when a chord belongs to the text being typed rather than to the canvas.
+   *
+   * Descends through shadow roots, because document.activeElement reports the
+   * host rather than the field when focus is inside one, and a field in a
+   * shadow tree would otherwise read as "not typing".
+   */
   function isEditing() {
-    const el = document.activeElement;
+    let el = document.activeElement;
+    while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
     if (!el) return false;
     if (el.isContentEditable) return true;
     const tag = el.tagName;
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
   }
 
-  // Chords whose keydown we swallowed, so the matching keyup can be swallowed
-  // too. Figma would otherwise see the second half of a keystroke whose first
-  // half never arrived, which is how a modifier gets stuck down.
+  /**
+   * Keys whose keydown we took, so the matching keyup can be taken too.
+   * Figma would otherwise see the release half of a keystroke whose press it
+   * never saw.
+   *
+   * Emptied whenever the page loses focus, which is the case that made an
+   * earlier version misbehave. Cmd+F hands focus to Chrome's find bar and
+   * Cmd+P to the print dialog, so those keyups are delivered to browser UI
+   * and never arrive here. The record would then outlive the keystroke and
+   * eat the release of the next ordinary press of that letter.
+   */
   const swallowed = new Set();
+  const forgetSwallowed = () => swallowed.clear();
+  window.addEventListener('blur', forgetSwallowed, true);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) forgetSwallowed();
+  });
 
   function onKeyDown(e) {
-    if (e[SYNTHETIC]) return; // ours; Figma is the intended recipient
+    if (!e.isTrusted) return; // ours, or the page's; either way not a keypress
     if (!settings.keymap.enabled) return;
 
-    const chord = KEYMAP.chordOf(e);
-    const decision = KEYMAP.resolve(chord, active, isEditing());
+    const decision = KEYMAP.resolveEvent(e, active, isEditing());
     if (!decision) return;
 
     // Take the event away from the page. Deliberately no preventDefault():
     // for a reclaim, the browser's default action is the entire point, and
     // for a rehome the source chord has no default worth suppressing.
-    e.stopImmediatePropagation();
-    e.stopPropagation();
+    e.stopImmediatePropagation(); // note: no preventDefault; see the file header
     swallowed.add(e.code);
 
     if (decision.action === 'rehome' && decision.chord) {
+      // Auto-repeat would otherwise fire one synthetic chord per repeat for
+      // as long as the key is held, which is a storm at Figma and a lie in
+      // the diagnostics counters.
+      if (e.repeat) return;
       // After the current event finishes dispatching, so Figma sees a clean
       // keystroke rather than one nested inside another.
       setTimeout(() => dispatchChord(decision.chord), 0);
     }
   }
 
-  function onKeyUpOrPress(e) {
-    if (e[SYNTHETIC]) return;
+  function onKeyUp(e) {
+    if (!e.isTrusted) return;
     if (!swallowed.has(e.code)) return;
-    if (e.type === 'keyup') swallowed.delete(e.code);
+    swallowed.delete(e.code);
     e.stopImmediatePropagation();
-    e.stopPropagation();
   }
 
+  // Losing focus mid-chord means the keyup lands somewhere else and our
+  // record of a half-finished keystroke would outlive the keystroke. The next
+  // press of that key would then have its keyup eaten while Figma had already
+  // seen the keydown, which is how a tool gets stuck down.
+  window.addEventListener('blur', () => swallowed.clear());
+
   window.addEventListener('keydown', onKeyDown, true);
-  window.addEventListener('keypress', onKeyUpOrPress, true);
-  window.addEventListener('keyup', onKeyUpOrPress, true);
+  // No keypress listener: Chrome does not fire keypress for a modified or
+  // non-printable chord, so it can never fire for one we reclaimed. It could
+  // only ever match a stale record, which is to say do harm.
+  window.addEventListener('keyup', onKeyUp, true);
 
   /* ---------------------------------------------------------------- canvas */
 
@@ -140,10 +180,10 @@
    * unmodified right-click still gets Figma.
    */
   function onContextMenu(e) {
+    if (!e.isTrusted) return;
     if (!settings.canvas.rightClick) return;
     if (!e.shiftKey) return;
     e.stopImmediatePropagation();
-    e.stopPropagation();
   }
   window.addEventListener('contextmenu', onContextMenu, true);
 
@@ -151,43 +191,42 @@
    * Wheel.
    *
    * Figma reads a wheel event with ctrlKey set as a zoom, because that is how
-   * every browser reports a trackpad pinch. Swapping the two modes is
-   * therefore a matter of rewriting the modifier and re-dispatching, not of
-   * driving Figma's viewport ourselves.
+   * every browser reports a trackpad pinch. So the only thing this can offer
+   * is to set that flag on a plain wheel, turning it into a zoom for someone
+   * on an external mouse. Shift is left as the escape hatch back to panning.
+   *
+   * There is deliberately no "always pan" setting. Pan-unless-pinch is
+   * already what Figma does with an untouched event, so such an option could
+   * only rewrite events into what they already were: no behaviour, and a
+   * non-passive listener taking the whole document off the compositor thread
+   * to deliver it. An earlier version shipped exactly that.
    */
   function onWheel(e) {
-    const mode = settings.canvas.scroll;
-    if (mode === 'figma') return;
-    if (e[SYNTHETIC]) return;
-
-    const isZoomGesture = e.ctrlKey || e.metaKey;
-    let wantZoom;
-    if (mode === 'zoom') wantZoom = !e.shiftKey; // plain wheel zooms
-    else wantZoom = isZoomGesture;               // 'pan': only a real pinch zooms
-
-    if (wantZoom === isZoomGesture) return; // already what Figma would do
+    if (!e.isTrusted) return;
+    if (settings.canvas.scroll !== 'zoom') return;
+    if (e.ctrlKey || e.metaKey) return; // already a zoom gesture; leave it
+    if (e.shiftKey) return;             // the deliberate pan
 
     e.stopImmediatePropagation();
-    e.stopPropagation();
     e.preventDefault(); // here it is correct: the page must not also scroll
 
     const ev = new WheelEvent('wheel', {
       deltaX: e.deltaX, deltaY: e.deltaY, deltaZ: e.deltaZ, deltaMode: e.deltaMode,
       clientX: e.clientX, clientY: e.clientY,
       screenX: e.screenX, screenY: e.screenY,
-      ctrlKey: wantZoom, metaKey: false, shiftKey: false, altKey: e.altKey,
+      ctrlKey: true, metaKey: false, shiftKey: false, altKey: e.altKey,
       bubbles: true, cancelable: true, composed: true,
     });
-    ev[SYNTHETIC] = true;
-    (e.target || document.body).dispatchEvent(ev);
+    (e.target || document.body || document.documentElement).dispatchEvent(ev);
   }
-  // Attached only while a swap is actually configured. A non-passive wheel
-  // listener opts the whole page out of the browser's threaded scrolling, so
-  // registering one unconditionally would slow down every user who left the
-  // wheel alone, which is the default.
+
+  // Attached only while the swap is configured. A non-passive wheel listener
+  // opts the whole page out of the browser's threaded scrolling, so binding
+  // one unconditionally would slow down every user who left the wheel alone,
+  // which is the default.
   let wheelBound = false;
   function bindWheel() {
-    const want = settings.canvas.scroll !== 'figma';
+    const want = settings.canvas.scroll === 'zoom';
     if (want === wheelBound) return;
     if (want) window.addEventListener('wheel', onWheel, { capture: true, passive: false });
     else window.removeEventListener('wheel', onWheel, { capture: true });
@@ -198,78 +237,142 @@
   /**
    * Middle-click drag.
    *
-   * Figma pans on a middle-button drag, but on Windows and Linux Chrome claims
-   * the same gesture first for autoscroll, and on X11 a middle click also
-   * pastes the primary selection. Suppressing the browser's default on the
-   * canvas leaves the gesture to Figma, which is what it does on a Mac
-   * already. This is the whole of the fix: we do not pan anything ourselves.
+   * Figma pans on a middle-button drag, but on Windows and Linux Chrome
+   * claims the same gesture first for autoscroll, and on X11 a middle click
+   * also pastes the primary selection. Cancelling the mousedown default
+   * leaves the gesture to Figma, which is what already happens on a Mac.
+   *
+   * Deliberately not cancelled on a link. Middle-clicking a link opens it in
+   * a new tab, and that gesture is worth more than autoscroll suppression on
+   * a file card in the browser or a link in a comment. An earlier version
+   * cancelled auxclick everywhere and quietly broke it across the whole site.
    */
   function onAuxDown(e) {
+    if (!e.isTrusted) return;
     if (!settings.canvas.middleClickPan) return;
     if (e.button !== 1) return;
     if (isEditing()) return;
+    const el = e.target;
+    if (el && el.closest && el.closest('a[href]')) return;
     e.preventDefault(); // stop autoscroll and primary-selection paste
   }
   window.addEventListener('mousedown', onAuxDown, true);
-  window.addEventListener('auxclick', (e) => {
-    if (settings.canvas.middleClickPan && e.button === 1 && !isEditing()) e.preventDefault();
-  }, true);
 
   /* ------------------------------------------------------------- declutter */
+
+  // Editor surfaces only. The banner patterns match on wording, and the same
+  // wording is the actual headline copy on figma.com's marketing and help
+  // pages, where hiding it would make Figma's own site look broken with
+  // nothing on screen to say why.
+  const EDITOR_PATH = /^\/(file|design|board|slides|deck|proto|buzz)\//;
+  function declutterAllowedHere() {
+    return EDITOR_PATH.test(location.pathname);
+  }
 
   let observer = null;
   let pending = [];
   let scheduled = 0;
+  let needsFullSweep = false;
+
+  // Above this many queued subtrees, the queue itself is the problem: drop it
+  // and owe one full pass instead. Keeps a hostile or merely busy page from
+  // turning a cheap DOM insertion into an unbounded list of strong references
+  // to nodes that would otherwise be collected.
+  const PENDING_CAP = 2000;
+
+  function schedule() {
+    if (!scheduled) scheduled = requestAnimationFrame(drain);
+  }
 
   /**
-   * Sweep only what was added, and no more than once a frame.
+   * Sweep what was added, within a time budget, and no more than once a frame.
    *
-   * Figma mutates the DOM continuously, so a handler that rescanned the whole
-   * document on every record would be a permanent tax on the canvas. Mutation
-   * records already say exactly which subtrees are new, and a banner arrives
-   * as one of them.
+   * Figma mutates the DOM continuously, so rescanning the whole document per
+   * record would be a permanent tax on the canvas. Mutation records already
+   * name the new subtrees, and a banner arrives as one of them. The budget
+   * exists because a single burst can queue thousands of nodes, and spending
+   * a whole frame on them would drop the canvas instead of the banner.
    */
   function drain() {
     scheduled = 0;
     const wanted = SELECTORS.active(settings.declutter);
-    if (!wanted.length) { pending = []; return; }
+    if (!wanted.length) { pending = []; needsFullSweep = false; return; }
+
+    if (needsFullSweep) {
+      needsFullSweep = false;
+      pending = [];
+      SELECTORS.sweep(document, wanted);
+      return;
+    }
+
     const roots = pending;
     pending = [];
-    for (const node of roots) {
-      if (node.nodeType !== 1) continue;
+    const deadline = Date.now() + 8;
+    let i = 0;
+    for (; i < roots.length; i += 1) {
+      const node = roots[i];
+      if (!node || node.nodeType !== 1) continue;
       SELECTORS.sweep(node, wanted);
       // querySelectorAll does not include the root, and a banner is often the
       // added node itself rather than something inside it.
       SELECTORS.sweep({ querySelectorAll: () => [node] }, wanted);
+      if (Date.now() > deadline) { i += 1; break; }
+    }
+    if (i < roots.length) {
+      pending = roots.slice(i).concat(pending);
+      schedule();
     }
   }
 
   function onMutations(records) {
+    // requestAnimationFrame does not fire in a background tab. Queuing there
+    // would grow for as long as the tab stays hidden, holding detached nodes
+    // alive, so remember that a pass is owed and throw the queue away.
+    if (document.hidden) {
+      needsFullSweep = true;
+      pending = [];
+      return;
+    }
     for (const record of records) {
       for (const node of record.addedNodes) pending.push(node);
     }
-    if (pending.length && !scheduled) {
-      scheduled = requestAnimationFrame(drain);
+    if (pending.length > PENDING_CAP) {
+      needsFullSweep = true;
+      pending = [];
     }
+    if (pending.length || needsFullSweep) schedule();
   }
 
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && (needsFullSweep || pending.length)) schedule();
+  });
+
   function applyDeclutter() {
-    if (!SELECTORS) return;
-    const wanted = SELECTORS.active(settings.declutter);
+    const wanted = declutterAllowedHere() ? SELECTORS.active(settings.declutter) : [];
+    const activeIds = new Set(wanted.map((p) => p.id));
+
+    // Anything hidden under a rule that is now switched off goes back. Hiding
+    // is an inline style, so without this the checkbox is a one-way door and
+    // unticking it does nothing a user can see.
+    if (document.body) SELECTORS.unhide(document, activeIds);
 
     if (!wanted.length) {
       if (observer) { observer.disconnect(); observer = null; }
+      pending = [];
+      needsFullSweep = false;
       return;
     }
 
-    // One full pass for whatever is already on the page, then incremental.
+    // A rule switched back on has to be able to match elements this session
+    // already judged and dismissed.
+    SELECTORS.resetSeen();
     if (document.body) SELECTORS.sweep(document, wanted);
 
     if (!observer) {
+      // documentElement exists by definition at document_start, which is what
+      // run_at means: after the document element, before any page script.
       observer = new MutationObserver(onMutations);
-      const start = () => observer.observe(document.documentElement, { childList: true, subtree: true });
-      if (document.documentElement) start();
-      else document.addEventListener('readystatechange', start, { once: true });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
     }
   }
 
@@ -284,9 +387,15 @@
 
   SETTINGS.load(adopt);
 
-  chrome.storage.onChanged.addListener((_changes, area) => {
-    if (area === 'sync') SETTINGS.load(adopt);
-  });
+  try {
+    chrome.storage.onChanged.addListener((_changes, area) => {
+      if (area === 'sync') SETTINGS.load(adopt);
+    });
+  } catch (_) {
+    // Storage is unavailable, so settings can never change. The listeners
+    // registered above keep working on the defaults, which is a far better
+    // outcome than aborting init half-way through.
+  }
 
   /**
    * Publish the synthetic-event verdict for the options page.
@@ -298,14 +407,28 @@
    * keystroke and this is diagnostics, not telemetry -- it never leaves the
    * machine, and records counts rather than keys.
    */
-  let healthTimer = 0;
+  /**
+   * Write to storage without ever producing an unhandled rejection.
+   *
+   * Reloading or updating an extension leaves its old content scripts running
+   * in open tabs with a dead runtime, and every chrome.* call then fails.
+   * With MV3 that failure is a rejected promise, not only a throw, so a bare
+   * try/catch leaves "Extension context invalidated" in the user's console on
+   * every write afterwards. Checking runtime.id first catches the common
+   * case; catching the rejection covers the rest, including the write-quota
+   * error that a fast series of clicks in the options page can produce.
+   */
+  function save(value, area) {
+    try {
+      if (!chrome.runtime || !chrome.runtime.id) return;
+      const done = chrome.storage[area].set(value);
+      if (done && typeof done.catch === 'function') done.catch(() => {});
+    } catch (_) { /* the context went away mid-call; nothing to report to */ }
+  }
+
   function publishHealth() {
     clearTimeout(healthTimer);
-    healthTimer = setTimeout(() => {
-      try {
-        chrome.storage.local.set({ health: { ...health, at: Date.now() } });
-      } catch (_) { /* the page is going away; the numbers are not worth an error */ }
-    }, 1000);
+    healthTimer = setTimeout(() => save({ health: { ...health } }, 'local'), 1000);
   }
 
   applyDeclutter();

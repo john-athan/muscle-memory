@@ -6,7 +6,7 @@ Muscle Memory
 
 ## Short description (max 132 chars)
 
-Gives your browser's shortcuts back on Figma. Reload works again, right-click works again, and the wheel scrolls the way you expect.
+Cmd+Shift+R reloads instead of replacing your slide. Gives Figma back your browser's keyboard shortcuts.
 
 ## Category
 
@@ -34,8 +34,8 @@ WHAT COMES BACK
 
 WHAT STAYS WITH FIGMA
 
-Cmd+D, Cmd+G, Cmd+Shift+G, Cmd+= and Cmd+0. On a canvas those mean duplicate,
-group, ungroup and zoom, and that is the meaning you expect. The rule is not
+Cmd+D, Cmd+G, Cmd+Shift+G, Cmd+=, Cmd+- and Cmd+0. On a canvas those mean
+duplicate, group, ungroup and zoom, and that is the meaning you expect. The rule is not
 that the browser always wins. It is that the expected meaning wins.
 
 ALSO
@@ -43,7 +43,7 @@ ALSO
 - Shift+right-click opens the browser's own context menu. An ordinary
   right-click still opens Figma's, which is worth keeping.
 - The mouse wheel can be made to zoom instead of pan, for anyone not on a
-  trackpad.
+  trackpad. Shift still pans.
 - Middle-click panning is protected from Chrome's autoscroll.
 - Three promotional surfaces can be hidden: the "open in desktop app" banner
   that has no dismiss button, AI upsells, and the "what's new" modal.
@@ -57,8 +57,14 @@ number rather than claiming it does.
 
 PRIVACY
 
-No analytics, no telemetry, no network requests, no host permissions. One
-permission, "storage", for your settings. Open source under MIT.
+No analytics, no telemetry, and no network requests of any kind. One
+permission, "storage", for your settings.
+
+It runs on www.figma.com and nowhere else. Chrome describes that as "read and
+change your data on figma.com", which is what any extension that touches a page
+must ask for. What it does with it is read keyboard and mouse events, and the
+wording of banners. Open source under MIT, with no build step, so the code on
+GitHub is the code that runs.
 
 Not affiliated with Figma, Inc.
 
@@ -68,7 +74,7 @@ Single purpose: adjust keyboard, mouse and interface behaviour on figma.com so
 that the browser's own shortcuts and controls keep working.
 
 Permission justification, storage: persists the user's settings across sessions
-and machines, and two local counters shown in the diagnostics panel.
+and machines, and the counters shown in the diagnostics panel.
 
 Remote code: none. No code is fetched or executed from outside the package.
 

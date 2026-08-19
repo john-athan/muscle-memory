@@ -8,7 +8,7 @@
   "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": ["*://*.figma.com/*"],
+      "matches": ["https://www.figma.com/*"],
       "js": [
         "src/keymap.js",
         "src/settings.js",

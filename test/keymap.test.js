@@ -239,8 +239,40 @@ test('chordToInit refuses a key it cannot express', () => {
 /* ----------------------------------------------------------------- labels */
 
 test('chords are written the way the platform writes them', () => {
-  assert.equal(mac().label('Mod+Shift+R'), '⌘⇧R');
+  // Apple's order is Control, Option, Shift, Command, key last, and every Mac
+  // menu bar follows it. Our canonical form leads with Mod because that is
+  // the axis rules group by, so the label has to reorder rather than print
+  // the internal form at a person.
+  assert.equal(mac().label('Mod+Shift+R'), '⇧⌘R');
+  assert.equal(mac().label('Mod+Alt+Shift+V'), '⌥⇧⌘V');
+  assert.equal(mac().label('Mod+Alt+F'), '⌥⌘F');
   assert.equal(pc().label('Mod+Shift+R'), 'Ctrl+Shift+R');
+});
+
+test('a keydown is recognised whatever the layout calls its physical key', () => {
+  // Dvorak: the key that types "r" sits on physical KeyO. Matching on `code`
+  // alone would miss it, Chrome would reload anyway, and Figma would ALSO
+  // rename the layer, which is the original bug with an extra step.
+  const K = mac();
+  const dvorak = { key: 'r', code: 'KeyO', metaKey: true, ctrlKey: false, altKey: false, shiftKey: false };
+  const out = K.resolveEvent(dvorak, new Set(['reload']), false);
+  assert.ok(out, 'Cmd+R must be recognised on a remapped layout');
+  assert.equal(out.action, 'reclaim');
+});
+
+test('punctuation is never inferred from the physical key', () => {
+  // On a German layout physical BracketLeft types "ü". Treating that as "["
+  // would reclaim a chord the browser has nothing bound to, so the key would
+  // do nothing at all rather than something wrong.
+  const K = mac();
+  const german = { key: 'ü', code: 'BracketLeft', metaKey: true, ctrlKey: false, altKey: false, shiftKey: false };
+  assert.equal(K.resolveEvent(german, new Set(['back']), false), null);
+});
+
+test('a rehome does not fire while typing', () => {
+  // F2 mid-sentence is part of the text, not a rename command.
+  const K = mac();
+  assert.equal(K.resolve('F2', new Set(['reload']), true), null);
 });
 
 /* ------------------------------------------- the shortcut this was built for */
