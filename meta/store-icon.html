@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css">
+<style>
+/* The listing icon: the same keycap that appears on the banner, the promo
+   tiles and the first screenshot, so the thing people click in the store is
+   the thing they were just shown.
+   Square rather than the landscape cap used elsewhere, because the canvas is
+   square and a wide cap would leave most of it empty.
+   96px of artwork centred in 128, which is what the store asks for. An icon
+   that fills its canvas renders heavier than every neighbour in the grid.
+   The cap is 89 tall, not 96: the front edge is drawn as a shadow and adds
+   7px below the box, and it is part of the artwork the store measures. */
+html,body{background:transparent}
+body{width:128px;height:128px;display:grid;place-items:center}
+.cap{width:96px;height:89px;font-size:28px;letter-spacing:.005em;
+ border-radius:17px;border-width:1.5px;
+ /* Optically centred rather than mathematically: the front edge sits below
+    the box, so text centred in the box reads low on the face. */
+ padding-bottom:5px;
+ box-shadow:0 5px 0 var(--cap-side),0 7px 0 var(--cap-edge)}
+</style></head><body>
+  <span class="cap">&#8679;&#8984;R</span>
+</body></html>

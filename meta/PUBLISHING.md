@@ -36,25 +36,66 @@ Copy is in [store-listing.md](store-listing.md). Artwork is in `screenshots/`:
 | Screenshots (up to 5) | `store-1-problem.png`, `store-2-keys.png`, `store-3-popup.png` | 1280x800 |
 | Small promo tile | `store-promo-small.png` | 440x280 |
 | Marquee promo tile | `store-promo-marquee.png` | 1400x560 |
-| Store icon | `icons/icon128.png` | 128x128 |
+| Store icon | `screenshots/store-icon.png` | 128x128, 96px artwork, transparent padding |
 
-## The privacy declarations
+## The privacy practices tab
 
-These are the questions that stall a review when answered carelessly. The
-answers below are what the code actually does; do not soften them.
+The console will not let you publish until every field here is filled in. The
+answers below are what the code actually does. Do not soften them: a
+justification that overstates or understates the access is the usual reason a
+review stalls, and everything here is checkable against the source.
 
-- **Single purpose.** "Adjust keyboard, mouse and interface behaviour on
-  figma.com so that the browser's own shortcuts and controls keep working."
-- **Permission justification, `storage`.** "Persists the user's settings across
-  sessions and machines, and the counters shown in the diagnostics panel."
-- **Host access.** The extension declares no `host_permissions`. Its content
-  script matches `https://www.figma.com/*`, which Chrome still presents to the
-  user as "read and change your data on figma.com". Say so plainly; the listing
-  and the privacy policy both do.
-- **Remote code.** No. Nothing is fetched or executed from outside the package,
-  there is no build step, and the source on GitHub is byte for byte what runs.
-- **Data collection.** None of the disclosure categories apply. The extension
-  makes no network requests of any kind.
+### Single purpose description
+
+> Muscle Memory has one purpose: to correct input handling on www.figma.com so
+> that the browser's own keyboard shortcuts, context menu and mouse-wheel
+> behaviour keep working while the Figma web app is open. Figma consumes
+> several chords the browser owns, including Cmd+Shift+R, which Figma binds to
+> "Paste to Replace" and which can therefore destroy the current selection when
+> the user meant to reload. Every feature serves that single purpose.
+
+### Permission justification: `storage`
+
+> Used only to keep the user's own settings and nothing else. Settings are
+> stored with chrome.storage.sync so they follow the user's Chrome profile
+> between machines: which shortcuts to hand back to the browser, the mouse
+> preferences, and which of three banners to hide. Two counters are kept in
+> chrome.storage.local for the diagnostics panel, recording how many times the
+> extension pressed a shortcut on the user's behalf and how many of those Figma
+> acted on. No personal data is stored and nothing is transmitted anywhere.
+
+### Host permission justification
+
+> The extension declares no host_permissions. It registers a single content
+> script matching https://www.figma.com/*, which Chrome presents to the user as
+> host access. That access is required because the extension's entire function
+> is to receive keyboard, mouse and wheel events on the Figma web app before
+> the page's own handlers do, which is only possible from a content script
+> running in that page at document_start. It runs on no other site, makes no
+> network requests of any kind, and reads page text only to locate the three
+> dismissible promotional banners the user has chosen to hide.
+
+### Remote code
+
+Select **"No, I am not using remote code."** If a justification is still
+requested:
+
+> All executable code is contained in the uploaded package. The extension has
+> no build step, loads no script, stylesheet or data from any remote source,
+> and makes no network requests. It uses no eval and no new Function. The
+> source on GitHub is byte for byte what is in the package.
+
+### Data usage
+
+Tick **none** of the data-type checkboxes; the extension collects nothing.
+Then certify all three statements, each of which is true:
+
+- I do not sell or transfer user data to third parties, outside of the approved
+  use cases
+- I do not use or transfer user data for purposes that are unrelated to my
+  item's single purpose
+- I do not use or transfer user data to determine creditworthiness or for
+  lending purposes
 
 ## After the first publish
 

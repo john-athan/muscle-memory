@@ -89,6 +89,7 @@ same design tokens as the extension itself.
 - Screenshots: `screenshots/store-1-problem.png`, `store-2-keys.png`, `store-3-popup.png` (1280x800)
 - Small promo tile: `screenshots/store-promo-small.png` (440x280)
 - Marquee promo tile: `screenshots/store-promo-marquee.png` (1400x560)
+- Store icon: `screenshots/store-icon.png` (128x128, 96px of artwork with transparent padding, as the store asks)
 
 See [PUBLISHING.md](PUBLISHING.md) for the submission steps.
 
