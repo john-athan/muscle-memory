@@ -9,7 +9,7 @@ publish = false
 [dependencies]
 # Path filling and stroking with analytic anti-aliasing. Pure Rust, no system
 # graphics library, which is what keeps `cargo run` the whole of the setup.
-tiny-skia = "0.11"
+tiny-skia = "0.12"
 # Used only for the Lanczos reduction and the PNG encoder.
 image = { version = "0.25", default-features = false, features = ["png"] }
 
