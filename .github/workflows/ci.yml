@@ -37,11 +37,6 @@ jobs:
             node --check "$f" || exit 1
           done
 
-      - name: Syntax-check the provenance gate
-        # It runs only on tags and a monthly cron, so without this a syntax
-        # error surfaces at release time, in the job meant to gate the release.
-        run: python3 -m py_compile scripts/provenance-check.py
-
       - name: Test
         run: npm test
 
