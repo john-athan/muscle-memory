@@ -146,9 +146,11 @@ Google's own walkthrough for that flow is at
 git tag v1.0.0 && git push origin v1.0.0
 ```
 
-The tag also triggers `provenance.yml`, which asks GitHub code search whether
-anything distinctive in this release exists in somebody else's repository. Run
-it locally first if you want the answer while it can still change the release:
+The provenance gate no longer runs on the tag. It asks GitHub code search
+whether anything distinctive in this release exists in somebody else's
+repository, and the useful moment for that is before the tag, while the answer
+can still change the release. A monthly sweep over every project catches the
+times it was forgotten:
 
 ```sh
 oss provenance muscle-memory
