@@ -27,11 +27,12 @@ command glyph it draws is U+2318, a Unicode character, constructed from
 primitives rather than copied from any typeface. Everything under `docs/` was
 produced for this project.
 
-## provenance-check.py
+## Provenance check
 
-`scripts/provenance-check.py` is the same tool as in
-[carrier-pigeon](https://github.com/john-athan/carrier-pigeon), by the same
-author, under the same licence.
+The provenance check, run as `oss provenance muscle-memory`, was originally
+written for [carrier-pigeon](https://github.com/john-athan/carrier-pigeon), by
+the same author, under the same licence. It now lives in the `oss-kit` fleet
+tool.
 
 ## Figma
 
@@ -43,6 +44,6 @@ Figma's interface, in the way an ad blocker matches a page it did not write.
 
 ## Reviewed and cleared
 
-Nothing yet. Findings from `scripts/provenance-check.py` that turn out to be
+Nothing yet. Findings from `oss provenance muscle-memory` that turn out to be
 convergent output rather than copying belong here, with the date and the
 reasoning.

@@ -151,5 +151,5 @@ anything distinctive in this release exists in somebody else's repository. Run
 it locally first if you want the answer while it can still change the release:
 
 ```sh
-./scripts/provenance-check.py
+oss provenance muscle-memory
 ```
