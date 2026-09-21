@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Muscle Memory",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gives your browser's shortcuts back on Figma, restores a real right-click, and lets the wheel scroll the way you expect.",
   "homepage_url": "https://github.com/john-athan/muscle-memory",
   "minimum_chrome_version": "116",
