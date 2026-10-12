@@ -64,7 +64,6 @@ jobs:
         run: |
           npm run check
           npm run package
-          node scripts/check-package.mjs muscle-memory.zip
 
       - name: Upload to the store
         if: steps.creds.outputs.have == 'yes'

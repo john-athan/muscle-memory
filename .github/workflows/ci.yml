@@ -31,12 +31,6 @@ jobs:
       - name: Every referenced file exists
         run: node scripts/check-assets.mjs
 
-      - name: Syntax-check every script
-        run: |
-          for f in src/*.js test/*.test.js scripts/*.mjs; do
-            node --check "$f" || exit 1
-          done
-
       - name: Test
         run: npm test
 

@@ -1,0 +1,24 @@
+{
+  "zip": "muscle-memory.zip",
+  "files": ["manifest.json", "src", "icons"],
+  "dependencies": true,
+  "hosts": [],
+  "contentScripts": ["https://www.figma.com/*"],
+  "allow": {},
+  "urls": [],
+  "assets": {
+    "screenshots/store-1-problem.png": [1280, 800],
+    "screenshots/store-2-keys.png": [1280, 800],
+    "screenshots/store-3-popup.png": [1280, 800],
+    "screenshots/store-promo-small.png": [440, 280],
+    "screenshots/store-promo-marquee.png": [1400, 560],
+    "screenshots/store-icon.png": [128, 128]
+  },
+  "storeIcon": "screenshots/store-icon.png",
+  "justify": {
+    "file": "meta/store-listing.md",
+    "after": "## Privacy practices",
+    "until": "\n## ",
+    "name": "^Permission justification, ([a-zA-Z]+):"
+  }
+}

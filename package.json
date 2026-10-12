@@ -13,8 +13,8 @@
   },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
-    "check": "node scripts/check-assets.mjs && for f in src/*.js test/*.test.js scripts/*.mjs; do node --check \"$f\" || exit 1; done && npm test",
-    "package": "rm -f muscle-memory.zip && zip -rq muscle-memory.zip manifest.json src icons -x '*.DS_Store' && node scripts/check-package.mjs muscle-memory.zip",
+    "check": "node tools/webext.mjs validate && node scripts/check-assets.mjs && npm test",
+    "package": "node tools/webext.mjs package",
     "check:icons": "cd tools/icons && cargo fmt --check && cargo clippy --locked -- -D warnings && cargo run --locked --release && cd ../.. && { [ -z \"$(git status --porcelain -- icons)\" ] || { echo 'the generator no longer matches the committed icons'; git status --porcelain -- icons; exit 1; }; }"
   }
 }
