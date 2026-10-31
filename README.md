@@ -66,9 +66,8 @@ needs no emulation at all.
 
 ## Install
 
-Not yet on the Chrome Web Store. The listing is prepared and the package
-validates, but submitting it needs a developer account, so it is a manual step:
-see [meta/PUBLISHING.md](meta/PUBLISHING.md). Until then:
+From the [Chrome Web Store](https://chromewebstore.google.com/detail/kdgadmmgencajhaikjhmoalccfabklgp).
+To run it from source instead:
 
 1. `git clone https://github.com/john-athan/muscle-memory.git`
 2. Open `chrome://extensions`, switch on Developer mode
