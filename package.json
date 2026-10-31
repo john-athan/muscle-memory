@@ -9,7 +9,7 @@
     "url": "https://github.com/john-athan/muscle-memory.git"
   },
   "engines": {
-    "node": ">=21"
+    "node": ">=26"
   },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
