@@ -36,6 +36,12 @@ const MM_DEFAULTS = {
     aiUpsell: true,
     whatsNew: true,
   },
+  panel: {
+    // Figma's right panel, put away. Toggled with Cmd+Opt+0 in a file or from
+    // the popup, and remembered, because somebody who hid it once in a deck
+    // wants it gone in the next deck too. See panel.js.
+    hidden: false,
+  },
 };
 
 /** Deep-merge stored values over the defaults, one level of nesting. */

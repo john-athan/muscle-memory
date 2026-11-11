@@ -8,7 +8,7 @@ tab, in that order: a content script is injected at `document_start`, so a tab
 that was already open is still running the previous version.
 
 ```sh
-npm test                                                     # 80 tests, no dependencies
+npm test                                                     # 90 tests, no dependencies
 npm run check                                                # manifest, syntax, tests
 cargo run --release --manifest-path tools/icons/Cargo.toml   # regenerate icons
 ```

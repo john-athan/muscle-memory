@@ -301,6 +301,9 @@ li{margin:7px 0}
     <li data-tip="Patterns live in src/selectors.js and match on wording rather than class names. They run on open files only, never on the rest of figma.com, and a load-bearing check refuses to hide anything large or containing the canvas.">
       The banner-hiding patterns will rot as Figma redesigns. They fail by doing nothing.
     </li>
+    <li data-tip="&#8997;&#8984;0 toggles the right panel alone, and the popup has the same switch. The panel is found by its shape in src/panel.js: a column against the right edge, most of the window tall. The app is then made one panel wider than the window and clipped, so the canvas takes the freed space. Share, Present and zoom sit at the top of it and hide with it.">
+      Hiding the right panel finds it by shape, not by name. If Figma moves it, the panel stays.
+    </li>
     <li data-tip="Chrome resolves ⌘N, ⌘T, ⌘W and ⌘Q above the page, so no website can take them and no extension needs to defend them.">
       Some chords were never at risk. Those are listed too, rather than claimed as wins.
     </li>

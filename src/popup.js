@@ -26,6 +26,8 @@ function cap(chord) {
 }
 
 function render() {
+  document.getElementById('panel-hidden').checked = settings.panel.hidden;
+
   const enabled = settings.keymap.enabled;
   document.getElementById('keymap-enabled').checked = enabled;
   document.getElementById('state').textContent =
@@ -71,6 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (done && typeof done.catch === 'function') done.catch(() => {});
     } catch (_) { /* nothing useful to do from a popup */ }
     render();
+  });
+  document.getElementById('panel-chord').textContent = KEYMAP.label(globalThis.MM_PANEL.CHORD);
+  // Only the panel key is written, so this cannot overwrite a keymap change
+  // made in another window since the popup opened.
+  document.getElementById('panel-hidden').addEventListener('change', (e) => {
+    settings.panel = { hidden: e.target.checked };
+    try {
+      const done = chrome.storage.sync.set({ panel: settings.panel });
+      if (done && typeof done.catch === 'function') done.catch(() => {});
+    } catch (_) { /* nothing useful to do from a popup */ }
   });
   document.getElementById('open-options').addEventListener('click', () => {
     chrome.runtime.openOptionsPage();

@@ -37,6 +37,16 @@ Also included: `⇧`+right-click for the browser's own context menu, an optional
 wheel that zooms instead of pans, protection for middle-click panning, and
 three promotional banners that can be hidden.
 
+`⌥⌘0` hides Figma's right panel and nothing else, and brings it back. Figma's
+own Hide UI (`⌘\`) takes both panels at once, which in a deck costs the slide
+list you navigate by. The popup has the same switch. Hiding the panel alone would
+leave a hole, because Figma sizes the canvas from its own record of the panel's
+width. So the app is made one panel wider than the window and clipped: Figma
+lays out canvas and panel across that width, and the canvas fills the window.
+The panel is found by its shape, a tall column against the right edge, rather
+than by class names, so a redesign that breaks it leaves the panel on screen. Share, Present and zoom sit
+at the top of that column and go with it.
+
 ## How it works
 
 One detail of the DOM event model does most of the work. A listener registered
@@ -99,7 +109,7 @@ Chrome and Edge 116 or newer. Firefox is not supported yet: it needs a
 ## Development
 
 ```sh
-npm test         # 81 tests, no dependencies
+npm test         # 90 tests, no dependencies
 npm run check    # manifest, syntax, artwork, store limits, tests
 npm run package  # muscle-memory.zip, validated against the store's limits
 

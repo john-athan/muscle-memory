@@ -357,3 +357,31 @@ test('banner hiding does run on an editor URL', () => {
   const { sandbox } = boot({ urlPath: '/design/abc/Deck' });
   assert.equal(sandbox.observing, true, 'the observer should be watching an editor page');
 });
+
+/* ------------------------------------------------------------ right panel */
+
+test('Cmd+Opt+0 toggles the right panel and keeps it from Figma', () => {
+  const { listeners, written } = boot();
+  const e = keydown('Digit0', { meta: true, alt: true });
+  listeners.window.keydown[0].fn(e);
+  assert.ok(e.calls.includes('stopImmediatePropagation'), 'Figma would see the chord');
+  assert.deepEqual(written.at(-1), { panel: { hidden: true } }, 'the toggle was not stored');
+
+  listeners.window.keydown[0].fn(keydown('Digit0', { meta: true, alt: true }));
+  assert.deepEqual(written.at(-1), { panel: { hidden: false } }, 'a second press should show it');
+});
+
+test('the panel chord works with the keymap switched off', () => {
+  // It is a feature of its own, not a reclaimed browser chord.
+  const { listeners, written } = boot({ stored: { keymap: { enabled: false } } });
+  listeners.window.keydown[0].fn(keydown('Digit0', { meta: true, alt: true }));
+  assert.deepEqual(written.at(-1), { panel: { hidden: true } });
+});
+
+test('the panel chord is left alone outside the editor', () => {
+  const { listeners, written } = boot({ urlPath: '/files/recent' });
+  const e = keydown('Digit0', { meta: true, alt: true });
+  listeners.window.keydown[0].fn(e);
+  assert.deepEqual(e.calls, []);
+  assert.equal(written.length, 0);
+});

@@ -304,6 +304,7 @@ function reflect() {
   }
   document.getElementById('right-click').checked = settings.canvas.rightClick;
   document.getElementById('middle-click').checked = settings.canvas.middleClickPan;
+  document.getElementById('panel-hidden').checked = settings.panel.hidden;
 }
 
 function renderAll() {
@@ -342,6 +343,12 @@ function init() {
   });
   document.getElementById('middle-click').addEventListener('change', (e) => {
     settings.canvas.middleClickPan = e.target.checked;
+    save();
+  });
+
+  document.getElementById('panel-chord').textContent = KEYMAP.label(globalThis.MM_PANEL.CHORD);
+  document.getElementById('panel-hidden').addEventListener('change', (e) => {
+    settings.panel.hidden = e.target.checked;
     save();
   });
 

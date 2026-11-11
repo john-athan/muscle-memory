@@ -42,6 +42,7 @@ browser always wins. It is that the expected meaning wins.
 
 ALSO
 
+- Cmd+Opt+0 hides Figma's right panel on its own, and brings it back.
 - Shift+right-click opens the browser's own context menu. An ordinary
   right-click still opens Figma's, which is worth keeping.
 - The mouse wheel can be made to zoom instead of pan, for anyone not on a

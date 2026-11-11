@@ -23,3 +23,5 @@ body.popup {
 .pop-foot { border-top: 1px solid var(--line-soft); padding-top: 9px; margin-top: 2px; display: flex; }
 .popup .linkish { margin-left: 0; }
 .popup .empty { color: var(--soft); font-size: 12.5px; padding: 12px 0; margin: 0; }
+.pop-panel { border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.pop-panel .cap { font-size: 10.5px; }

@@ -13,6 +13,7 @@
         "src/keymap.js",
         "src/settings.js",
         "src/selectors.js",
+        "src/panel.js",
         "src/content.js"
       ],
       "run_at": "document_start",

@@ -20,12 +20,24 @@
 
   <div class="ledger" id="ledger"></div>
 
+  <div class="pop-head pop-panel">
+    <div>
+      <strong>Hide the right panel</strong>
+      <small>Or press <span class="cap" id="panel-chord"></span> in a Figma file.</small>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="panel-hidden" aria-label="Hide Figma's right panel">
+      <span class="slider" aria-hidden="true"></span>
+    </label>
+  </div>
+
   <div class="pop-foot">
     <button type="button" id="open-options" class="linkish">All settings</button>
   </div>
 
   <script src="keymap.js"></script>
   <script src="settings.js"></script>
+  <script src="panel.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

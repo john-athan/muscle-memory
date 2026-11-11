@@ -22,6 +22,7 @@
   const KEYMAP = globalThis.MM_KEYMAP;
   const SETTINGS = globalThis.MM_SETTINGS;
   const SELECTORS = globalThis.MM_SELECTORS;
+  const PANEL = globalThis.MM_PANEL;
 
   // Applied synchronously; replaced when storage answers. See settings.js.
   let settings = SETTINGS.merge(null);
@@ -129,6 +130,18 @@
 
   function onKeyDown(e) {
     if (!e.isTrusted) return; // ours, or the page's; either way not a keypress
+
+    // The panel chord is ours, not a reclaim, so it answers to its own
+    // setting rather than to the keymap switch. Neither Figma nor Chrome has
+    // a use for it, so cancelling the default costs nothing.
+    if (declutterAllowedHere() && KEYMAP.chordsOf(e).includes(PANEL.CHORD)) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      swallowed.add(e.code);
+      if (!e.repeat) togglePanel();
+      return;
+    }
+
     if (!settings.keymap.enabled) return;
 
     const decision = KEYMAP.resolveEvent(e, active, isEditing());
@@ -378,6 +391,73 @@
     }
   }
 
+  /* ----------------------------------------------------------- right panel */
+
+  let panelEl = null;
+  let panelObserver = null;
+  let panelTimer = 0;
+
+  /**
+   * Tell Figma its viewport changed size.
+   *
+   * Widening the app changes the size Figma measures, but an app that only
+   * measures on resize would not look again until the window moved. A
+   * window resize event is the one signal every such app already handles.
+   */
+  function nudgeLayout() {
+    try { window.dispatchEvent(new Event('resize')); } catch (_) { /* no window to nudge */ }
+  }
+
+  /**
+   * Keep the panel pushed off screen, or stop when there is no panel.
+   *
+   * Cheap when it has nothing to do, which is almost every call: one box read
+   * on a known element. The hit test only runs when that element is gone.
+   * Figma's own Hide UI removes the panel, and then the app must go back to
+   * window width, or the canvas would run one panel's width past the edge.
+   * Narrowing first also puts a replacement panel back on screen, where the
+   * hit test can find it.
+   */
+  function ensurePanelAway() {
+    if (!document.body) return;
+    const r = panelEl && panelEl.isConnected ? panelEl.getBoundingClientRect() : null;
+    if (!r || r.width === 0) {
+      if (PANEL.narrow()) nudgeLayout();
+      panelEl = PANEL.find(document, window);
+      if (!panelEl) return;
+    }
+    if (PANEL.widen(document, panelEl, panelEl.getBoundingClientRect().width)) nudgeLayout();
+  }
+
+  function applyPanel() {
+    if (!settings.panel.hidden || !declutterAllowedHere()) {
+      if (panelObserver) { panelObserver.disconnect(); panelObserver = null; }
+      clearTimeout(panelTimer);
+      panelTimer = 0;
+      panelEl = null;
+      if (PANEL.narrow()) nudgeLayout();
+      return;
+    }
+    ensurePanelAway();
+    if (!panelObserver) {
+      // Throttled, because Figma mutates the DOM on every frame of a drag and
+      // the panel leaving a quarter of a second late is invisible next to a
+      // layout pass per mutation.
+      panelObserver = new MutationObserver(() => {
+        if (panelTimer) return;
+        panelTimer = setTimeout(() => { panelTimer = 0; ensurePanelAway(); }, 250);
+      });
+      panelObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+  }
+
+  /** Flip the setting here at once, and store it so other tabs follow. */
+  function togglePanel() {
+    settings.panel = { hidden: !settings.panel.hidden };
+    applyPanel();
+    save({ panel: settings.panel }, 'sync');
+  }
+
   /* -------------------------------------------------------------- settings */
 
   function adopt(next) {
@@ -385,6 +465,7 @@
     active = SETTINGS.activeRules(settings);
     bindWheel();
     applyDeclutter();
+    applyPanel();
   }
 
   SETTINGS.load(adopt);
@@ -452,4 +533,5 @@
   }
 
   applyDeclutter();
+  applyPanel();
 })();
