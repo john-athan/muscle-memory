@@ -4,5 +4,5 @@
 # an error message blaming the icons. Bump this deliberately, and commit the
 # regenerated icons in the same change if the bytes move.
 [toolchain]
-channel = "1.99.1"
+channel = "1.100.0"
 components = ["clippy", "rustfmt"]
