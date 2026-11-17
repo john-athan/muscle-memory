@@ -42,6 +42,12 @@ Copy is in [store-listing.md](store-listing.md). Artwork is in `screenshots/`:
 | Marquee promo tile | `store-promo-marquee.png` | 1400x560 |
 | Store icon | `screenshots/store-icon.png` | 128x128, 96px artwork, transparent padding |
 
+**The artwork does not ship with a release.** The store API uploads the
+package only. A new `screenshots/store-icon.png`, screenshot or promo tile has
+to be uploaded again by hand in the dashboard, on the Store listing tab, and the
+item submitted for review. `oss publish` names the files that changed since the
+version the store held.
+
 ## The privacy practices tab
 
 The console will not let you publish until every field here is filled in. The
