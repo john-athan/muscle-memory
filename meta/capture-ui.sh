@@ -6,7 +6,7 @@
 # headless Chrome against meta/ui-shim.js, which stands in for chrome.storage
 # with an empty profile, and photographs it at 2x.
 #
-#   sh meta/capture-ui.sh && sh meta/make-store-art.sh
+#   sh meta/capture-ui.sh && tools/render-assets.sh
 #
 # Needs Google Chrome.
 set -eu

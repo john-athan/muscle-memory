@@ -2,15 +2,15 @@
 
 ## Running it
 
-Load the repository folder unpacked from `chrome://extensions` with Developer
+Load the `src/` folder unpacked from `chrome://extensions` with Developer
 mode on. There is no build step. Reload the extension and then reload any Figma
 tab, in that order: a content script is injected at `document_start`, so a tab
 that was already open is still running the previous version.
 
 ```sh
-npm test                                                     # 90 tests, no dependencies
-npm run check                                                # manifest, syntax, tests
-cargo run --release --manifest-path tools/icons/Cargo.toml   # regenerate icons
+node --test test/            # the tests, no dependencies
+tools/validate.sh            # manifest, syntax, tests, store limits, icons
+tools/render-assets.sh icons # regenerate the icons
 ```
 
 ## Adding a chord

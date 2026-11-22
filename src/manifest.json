@@ -10,26 +10,26 @@
     {
       "matches": ["https://www.figma.com/*"],
       "js": [
-        "src/keymap.js",
-        "src/settings.js",
-        "src/selectors.js",
-        "src/panel.js",
-        "src/content.js"
+        "keymap.js",
+        "settings.js",
+        "selectors.js",
+        "panel.js",
+        "content.js"
       ],
       "run_at": "document_start",
       "all_frames": false
     }
   ],
   "background": {
-    "service_worker": "src/background.js",
+    "service_worker": "background.js",
     "type": "module"
   },
   "options_ui": {
-    "page": "src/options.html",
+    "page": "options.html",
     "open_in_tab": true
   },
   "action": {
-    "default_popup": "src/popup.html",
+    "default_popup": "popup.html",
     "default_title": "Muscle Memory",
     "default_icon": {
       "16": "icons/icon16.png",

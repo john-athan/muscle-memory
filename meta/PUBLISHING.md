@@ -16,10 +16,10 @@ left needs a Google account, and cannot be done for you.
 ## Building the upload
 
 ```sh
-npm run check                       # manifest, syntax, artwork sizes, store limits, tests
-npm run package                     # muscle-memory.zip, checked against the store's limits
+tools/validate.sh                    # manifest, syntax, artwork sizes, store limits, tests
+node tools/webext.mjs package       # muscle-memory.zip, checked against the store's limits
 sh meta/capture-ui.sh               # retake the options-page screenshot
-sh meta/make-store-art.sh           # listing artwork into screenshots/
+tools/render-assets.sh              # icons and listing artwork into src/icons and screenshots/
 ```
 
 Run `capture-ui.sh` before the artwork whenever the keymap changed. Two of the

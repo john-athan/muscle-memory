@@ -81,7 +81,7 @@ To run it from source instead:
 
 1. `git clone https://github.com/john-athan/muscle-memory.git`
 2. Open `chrome://extensions`, switch on Developer mode
-3. **Load unpacked**, and choose the folder
+3. **Load unpacked**, and choose the `src/` folder
 
 Reload any Figma tabs that were already open. Chrome does not inject content
 scripts into tabs that existed before the extension did.
@@ -109,13 +109,11 @@ Chrome and Edge 116 or newer. Firefox is not supported yet: it needs a
 ## Development
 
 ```sh
-npm test         # 90 tests, no dependencies
-npm run check    # manifest, syntax, artwork, store limits, tests
-npm run package  # muscle-memory.zip, validated against the store's limits
+node --test test/                # the tests, no dependencies
+tools/validate.sh                # manifest, syntax, artwork, store limits, tests
+node tools/webext.mjs package    # muscle-memory.zip, validated against the store's limits
 
-sh meta/make-store-art.sh   # regenerate the listing artwork
-
-cargo run --release --manifest-path tools/icons/Cargo.toml   # regenerate icons
+tools/render-assets.sh           # regenerate the icons and the listing artwork
 ```
 
 The keymap is data in `src/keymap.js`, shared by the content script and the

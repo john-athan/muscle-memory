@@ -2,33 +2,40 @@
 /**
  * The checks and the packaging every browser extension in the fleet shares.
  *
- * This file is owned by oss-kit (templates/webext/webext.mjs) and copied byte
+ * This file is owned by oss-kit (templates/shared/webext/tools/webext.mjs) and copied byte
  * for byte into each extension's tools/. Do not edit the copy: change the
  * template and run `oss sync-tooling`, and `oss doctor` reports a copy that has
  * drifted. It is copied rather than fetched because CI runs in public
  * repositories and has to work without oss-kit.
  *
- * What differs between extensions lives in webext.json beside the manifest,
+ * What differs between extensions lives in webext.json at the repository root,
  * so a difference is a declared fact rather than a fork of this file.
+ *
+ * The layout is the same everywhere: src/ holds exactly what ships (manifest,
+ * scripts, pages, styles, icons), and the store zip is src/ plus LICENSE. There
+ * is no list of shipped files to forget a new file in, and "Load unpacked"
+ * points at src/. Tests live in test/ and run with `node --test test/`.
  *
  *   node tools/webext.mjs validate        every shared check, then package
  *   node tools/webext.mjs package         build the store zip and check it
  *   node tools/webext.mjs check [zip]     check a zip that already exists
  *
  * No dependencies: node, zip, unzip, git and python3 (for the SVG parse) are
- * on every machine and runner this has to work on.
+ * on every machine and runner this has to work on. The extension itself has
+ * none either, and a package.json is a failure.
  */
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, readdirSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 process.chdir(resolve(dirname(fileURLToPath(import.meta.url)), '..'));
 
 const read = (f) => readFileSync(f, 'utf8');
-const manifest = JSON.parse(read('manifest.json'));
+const SRC = 'src';
+const manifest = JSON.parse(read(`${SRC}/manifest.json`));
 const config = JSON.parse(read('webext.json'));
 const version = manifest.version;
 const zipName = config.zip.replace('{version}', version);
@@ -37,6 +44,18 @@ let failed = 0;
 const step = (title) => console.log(`\n== ${title}`);
 const fail = (msg) => { console.error(`FAIL: ${msg}`); failed = 1; };
 const ok = (msg) => console.log(`ok ${msg}`);
+
+// Every file under src/, relative to it: what the store zip has to contain.
+function shipped(dir = SRC) {
+  const out = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.name === '.DS_Store') continue;
+    if (e.isDirectory()) out.push(...shipped(p));
+    else out.push(relative(SRC, p).split('\\').join('/'));
+  }
+  return out.sort();
+}
 
 // Every string in the manifest that names a file, wherever it sits.
 function manifestFiles() {
@@ -58,7 +77,7 @@ function checkManifest() {
   if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`version ${version} is not x.y.z, which oss release needs`);
   if (manifest.name.length > 45) fail(`name is ${manifest.name.length} chars, the store caps it at 45`);
   if (manifest.description.length > 132) fail(`description is ${manifest.description.length} chars, the store caps it at 132`);
-  for (const f of manifestFiles()) if (!existsSync(f)) fail(`manifest points at a missing file: ${f}`);
+  for (const f of manifestFiles()) if (!existsSync(`${SRC}/${f}`)) fail(`manifest points at a missing file: ${f}`);
   for (const size of ['16', '48', '128']) if (!manifest.icons?.[size]) fail(`no ${size}px icon declared`);
 
   // The permission list is the privacy claim. Anything beyond what webext.json
@@ -70,6 +89,19 @@ function checkManifest() {
     for (const m of cs.matches) if (!pages.includes(m)) fail(`content script on a page not in webext.json: ${m}`);
   }
   if (!failed) ok(`manifest, version ${version}`);
+}
+
+function checkLayout() {
+  step('The repository has the same shape as every other extension');
+  for (const f of ['README.md', 'LICENSE', 'CHANGELOG.md', 'THIRD_PARTY.md']) if (!existsSync(f)) fail(`${f} is missing`);
+  for (const d of ['docs', 'meta', 'screenshots']) if (!existsSync(d)) fail(`${d}/ is missing`);
+  // src/ is shipped whole, so anything in it that is not the extension is a
+  // leak. Tests, notes and dotfiles live beside it.
+  for (const f of shipped()) {
+    if (/(^|\/)\./.test(f)) fail(`src/${f} is a hidden file, and src/ ships whole`);
+    if (/\.(test|spec)\.m?js$|\.map$|\.md$/.test(f)) fail(`src/${f} would ship, and is not part of the extension`);
+  }
+  if (!failed) ok('README, LICENSE, CHANGELOG, THIRD_PARTY, docs, meta, screenshots, and src/ holds only what ships');
 }
 
 function checkParse() {
@@ -104,7 +136,6 @@ sys.exit(1 if bad else 0)
 
 function checkDependencies() {
   step('Dependencies');
-  if (config.dependencies) return ok('webext.json allows a package.json');
   const found = ['package.json', 'package-lock.json', 'yarn.lock', 'node_modules'].filter(existsSync);
   if (found.length) fail(`a dependency appeared in a project that is supposed to have none: ${found.join(', ')}`);
   else ok('still no dependencies');
@@ -163,8 +194,8 @@ function alphaAt(path) {
 function checkAssets() {
   step('Icons and store artwork are the size the store demands');
   for (const [size, path] of Object.entries(manifest.icons ?? {})) {
-    if (!existsSync(path)) continue; // reported by the manifest check
-    const [w, h] = imageSize(path);
+    if (!existsSync(`${SRC}/${path}`)) continue; // reported by the manifest check
+    const [w, h] = imageSize(`${SRC}/${path}`);
     if (w !== +size || h !== +size) fail(`${path} is ${w}x${h}, declared as ${size}`);
   }
   for (const [path, [ww, wh]] of Object.entries(config.assets ?? {})) {
@@ -208,10 +239,8 @@ function checkVersion() {
   if (existsSync('CHANGELOG.md') && !read('CHANGELOG.md').includes(`## [${version}]`)) {
     fail(`CHANGELOG.md has no entry for ${version}`);
   }
-  if (existsSync('package.json')) {
-    const v = JSON.parse(read('package.json')).version;
-    if (v !== version) fail(`package.json says ${v}, manifest says ${version}`);
-  }
+  // Files that repeat the version in their own words, e.g. a constant the
+  // content script reports. Paths are from the repository root.
   for (const { file, pattern } of config.versionIn ?? []) {
     const m = read(file).match(new RegExp(pattern));
     if (!m) fail(`${file} no longer declares a version matching ${pattern}`);
@@ -228,7 +257,10 @@ function build() {
   for (const f of readdirSync('.')) {
     if (f.startsWith(prefix) && f.endsWith('.zip')) rmSync(f);
   }
-  execFileSync('zip', ['-rq', zipName, ...config.files, '-x', '*.DS_Store'], { stdio: 'inherit' });
+  // The zip is the contents of src/ plus LICENSE, nothing named by hand. The
+  // two zip calls are one archive: the second adds to the first.
+  execFileSync('zip', ['-rqD', resolve(zipName), '.', '-x', '*.DS_Store'], { cwd: SRC, stdio: 'inherit' });
+  execFileSync('zip', ['-q', zipName, 'LICENSE'], { stdio: 'inherit' });
   console.log(execFileSync('unzip', ['-Z1', zipName], { encoding: 'utf8' }).trim().replace(/^/gm, '  '));
 }
 
@@ -239,13 +271,26 @@ function checkPackage(zip) {
   const listing = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter((n) => n && !n.endsWith('/'));
   const packed = new Set(listing);
+  // What the browser will actually run is the zip's own content, not the
+  // working tree's, so every read below goes through the zip.
+  const inZip = (n) => execFileSync('unzip', ['-p', zip, n], { encoding: 'utf8', maxBuffer: 1 << 28 });
 
-  // Only what webext.json lists. A stray test or dotfile is a bigger review
+  // Exactly src/ plus LICENSE. A stray test or dotfile is a bigger review
   // surface and a wider licence question.
-  const inList = (n) => config.files.some((f) => n === f || n.startsWith(f.replace(/\/?$/, '/')));
+  const want = new Set([...shipped(), 'LICENSE']);
   for (const n of listing) {
-    if (!inList(n)) fail(`unexpected file in the package: ${n}`);
+    if (!want.has(n)) fail(`unexpected file in the package: ${n}`);
     if (/(^|\/)\./.test(n)) fail(`hidden file in the package: ${n}`);
+  }
+  for (const n of want) if (!packed.has(n)) fail(`missing from the package: ${n}`);
+
+  // The manifest the store reads is the one in the zip.
+  if (!packed.has('manifest.json')) fail('manifest.json is not at the root of the package');
+  else {
+    try {
+      const m = JSON.parse(inZip('manifest.json'));
+      if (m.version !== version) fail(`the packaged manifest says ${m.version}, src/manifest.json says ${version}`);
+    } catch (e) { fail(`the packaged manifest does not parse: ${e.message}`); }
   }
 
   // Everything the extension names has to be inside, or it installs and then
@@ -254,14 +299,14 @@ function checkPackage(zip) {
   // by the pages themselves.
   const named = manifestFiles();
   for (const f of listing.filter((n) => n.endsWith('.js'))) {
-    const body = read(f);
+    const body = inZip(f);
     for (const m of body.matchAll(/importScripts\(([^)]*)\)|files:\s*\[([^\]]*)\]/g)) {
       for (const s of (m[1] ?? m[2]).matchAll(/['"]([^'"]+)['"]/g)) named.add(s[1]);
     }
     for (const m of body.matchAll(/\burl:\s*['"]([\w./-]+\.html)['"]/g)) named.add(m[1]);
   }
   for (const page of listing.filter((n) => n.endsWith('.html'))) {
-    for (const m of read(page).matchAll(/(?:src|href)=["']([^"':]+\.(?:js|css|png|svg))["']/g)) {
+    for (const m of inZip(page).matchAll(/(?:src|href)=["']([^"':]+\.(?:js|css|png|svg))["']/g)) {
       named.add(new URL(m[1], `file:///${page}`).pathname.slice(1));
     }
   }
@@ -277,7 +322,7 @@ function checkPackage(zip) {
   ];
   const urls = (config.urls ?? []).map((u) => new RegExp(u));
   for (const f of listing.filter((n) => n.endsWith('.js'))) {
-    let body = read(f);
+    let body = inZip(f);
     for (const shape of config.ignore ?? []) body = body.replace(new RegExp(shape, 'g'), '');
     for (const [key, pattern, why] of rules) {
       if (pattern.test(body) && !(allow[key] ?? []).includes(f)) fail(`${f} contains ${why}, and webext.json does not allow it there`);
@@ -296,7 +341,7 @@ function checkPackage(zip) {
 
 const [command = 'validate', arg] = process.argv.slice(2);
 if (command === 'validate') {
-  checkManifest(); checkParse(); checkSvg(); checkDependencies();
+  checkManifest(); checkLayout(); checkParse(); checkSvg(); checkDependencies();
   checkAssets(); checkJustifications(); checkVersion();
   build(); checkPackage(zipName);
 } else if (command === 'package') {

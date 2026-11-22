@@ -35,5 +35,5 @@ particular:
 ## Verifying a claim yourself
 
 There is no build step, so the source in this repository is what runs in the
-browser. `npm test` covers the behaviour, and `test/boot.test.js` in particular
+browser. `node --test test/` covers the behaviour, and `test/boot.test.js` in particular
 pins the invariants that a security fix must not regress.

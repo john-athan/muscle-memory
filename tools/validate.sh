@@ -19,22 +19,14 @@ step() { printf '\n== %s\n' "$1"; }
 for part in $parts; do
   case "$part" in
     extension)
+      # Also builds the store package and checks it against the store's own
+      # limits, and that every file the manifest and the pages name is in it: a
+      # path renamed in src/ but not in the manifest fails silently at load time
+      # and is the one break a user cannot diagnose.
       node tools/webext.mjs validate || fail=1
 
-      # Every file the extension loads, checked against what is on disk. A path
-      # renamed in src/ but not in the manifest, or a stylesheet the options page
-      # links and nobody ships, fails silently at load time and is the one break
-      # a user cannot diagnose.
-      step "every referenced file exists"
-      node scripts/check-assets.mjs || fail=1
-
       step "the tests"
-      node --test "test/**/*.test.js" || fail=1
-
-      # Builds the store package and checks it against the store's own limits,
-      # so a rejection is found here rather than after a multi-day review.
-      step "the package really contains what it claims"
-      node tools/webext.mjs package || fail=1
+      node --test test/ || fail=1
       ;;
     icons)
       # The PNGs are committed so that loading the extension needs no
@@ -46,10 +38,10 @@ for part in $parts; do
       (cd tools/icons && cargo fmt --check && cargo clippy --locked -- -D warnings) || fail=1
       step "the committed icons are what the generator produces"
       (cd tools/icons && cargo run --locked --release) || fail=1
-      if [ -n "$(git status --porcelain -- icons)" ]; then
+      if [ -n "$(git status --porcelain -- src/icons)" ]; then
         echo "FAILED: the generator's output no longer matches the committed icons."
         echo "After a dependency or toolchain bump: regenerate, look at them, commit."
-        git status --porcelain -- icons
+        git status --porcelain -- src/icons
         fail=1
       else
         echo "ok"

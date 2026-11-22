@@ -1,7 +1,5 @@
 {
   "zip": "muscle-memory.zip",
-  "files": ["manifest.json", "src", "icons"],
-  "dependencies": true,
   "hosts": [],
   "contentScripts": ["https://www.figma.com/*"],
   "allow": {},
@@ -15,6 +13,17 @@
     "screenshots/store-icon.png": [128, 128]
   },
   "storeIcon": "screenshots/store-icon.png",
+  "render": {
+    "iconCommand": "cd tools/icons && cargo run --locked --release",
+    "pages": [
+      {"group": "store-icon", "from": "meta/store-icon.html", "to": "screenshots/store-icon.png", "size": [128, 128], "transparent": true},
+      {"group": "promo", "from": "meta/promo-small.html", "to": "screenshots/store-promo-small.png", "size": [440, 280]},
+      {"group": "promo", "from": "meta/promo-marquee.html", "to": "screenshots/store-promo-marquee.png", "size": [1400, 560]},
+      {"group": "shots", "from": "meta/shot-1.html", "to": "screenshots/store-1-problem.png", "size": [1280, 800]},
+      {"group": "shots", "from": "meta/shot-2.html", "to": "screenshots/store-2-keys.png", "size": [1280, 800]},
+      {"group": "shots", "from": "meta/shot-3.html", "to": "screenshots/store-3-popup.png", "size": [1280, 800]}
+    ]
+  },
   "justify": {
     "file": "meta/store-listing.md",
     "after": "## Privacy practices",

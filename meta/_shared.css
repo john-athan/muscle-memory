@@ -1,6 +1,6 @@
 /* Shared look for the Chrome Web Store artwork. Same tokens as the extension,
    so the listing and the product are recognisably one thing. Rendered to PNG
-   by meta/make-store-art.sh; nothing here ships in the extension. */
+   by tools/render-assets.sh; nothing here ships in the extension. */
 :root{
   --paper:#e9ebee; --card:#fff; --ink:#14161b; --soft:#545c6a; --faint:#6b7280;
   --line:#d6dae0; --claim:#4f2fe8; --danger:#b32d1b; --keep:#0f766e;

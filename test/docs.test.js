@@ -82,14 +82,8 @@ test('the store listing does not promise a setting that was removed', () => {
   assert.equal(defaults.canvas.scroll, 'figma');
 });
 
-test('the manifest, package.json and store listing agree on the version', () => {
-  const manifest = JSON.parse(read('manifest.json'));
-  const pkg = JSON.parse(read('package.json'));
-  assert.equal(manifest.version, pkg.version, 'manifest and package.json disagree');
-});
-
 test('the manifest description fits what the store accepts', () => {
-  const manifest = JSON.parse(read('manifest.json'));
+  const manifest = JSON.parse(read('src/manifest.json'));
   assert.ok(manifest.name.length <= 45, 'name is over the 45 character limit');
   assert.ok(manifest.description.length <= 132, 'description is over the 132 character limit');
 });

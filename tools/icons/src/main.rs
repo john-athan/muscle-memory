@@ -221,14 +221,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(2)
         .ok_or("cannot locate repository root")?
         .to_path_buf();
-    let out = root.join("icons");
+    let out = root.join("src/icons");
     std::fs::create_dir_all(&out)?;
 
     for size in SIZES {
         let path = out.join(format!("icon{size}.png"));
         keycap(size).save(&path)?;
         println!(
-            "wrote icons/icon{size}.png ({} bytes)",
+            "wrote src/icons/icon{size}.png ({} bytes)",
             std::fs::metadata(&path)?.len()
         );
     }

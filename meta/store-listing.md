@@ -86,7 +86,7 @@ no network requests.
 
 ## Artwork
 
-Built by `sh meta/make-store-art.sh` from the HTML in this directory, using the
+Built by `tools/render-assets.sh` from the HTML in this directory, using the
 same design tokens as the extension itself.
 
 - Screenshots: `screenshots/store-1-problem.png`, `store-2-keys.png`, `store-3-popup.png` (1280x800)

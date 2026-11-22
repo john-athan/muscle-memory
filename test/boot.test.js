@@ -29,7 +29,7 @@ const SRC = path.join(__dirname, '..', 'src');
 
 /** The files the manifest injects, in the order it injects them. */
 function manifestScripts() {
-  const m = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8'));
+  const m = JSON.parse(fs.readFileSync(path.join(SRC, 'manifest.json'), 'utf8'));
   return m.content_scripts[0].js;
 }
 
@@ -96,7 +96,7 @@ function boot({ platform = 'MacIntel', stored = null, urlPath = '/design/abc/Dec
 
   const context = vm.createContext(sandbox);
   for (const rel of manifestScripts()) {
-    const file = path.join(__dirname, '..', rel);
+    const file = path.join(SRC, rel);
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: rel });
   }
   return { listeners, sandbox, written, dispatched };

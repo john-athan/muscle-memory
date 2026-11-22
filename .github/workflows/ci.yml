@@ -1,7 +1,10 @@
 name: CI
 
-# A caller, never a container: each job runs one part of tools/validate.sh,
-# the same script that runs on the machine before a push.
+# A caller, never a container. Every check lives in tools/validate.sh, so the
+# same checks run on the machine the code was written on, before the push, with
+# `oss check muscle-memory`. Logic that lives only in a workflow file can only ever
+# run after a push, somewhere else, which is the slowest place to learn that a
+# file is missing.
 
 on:
   push:
@@ -16,24 +19,27 @@ concurrency:
   cancel-in-progress: true
 
 # Third-party actions are pinned to commit SHAs rather than tags. A tag is
-# mutable and `@stable` is a branch, so whoever controls that repository would
-# otherwise choose what runs in this one.
+# mutable, so whoever controls that repository would otherwise choose what runs
+# in this one.
 jobs:
-  extension:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-      - name: Validate
-        run: tools/validate.sh extension
 
-  icons:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # The version itself comes from tools/icons/rust-toolchain.toml.
+      # The icons are drawn by a Rust crate whose output CI compares byte for
+      # byte. The version itself comes from tools/icons/rust-toolchain.toml.
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+
       - name: Validate
-        run: tools/validate.sh icons
+        run: tools/validate.sh
+
+      # The store zip as it would be uploaded, for a look before a release.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: muscle-memory-package
+          path: "*.zip"
