@@ -128,35 +128,18 @@ above, and it is easy to miss below them.
 ## After the first publish
 
 Reviews usually take a few days for a first submission and are faster after.
-Once the item exists it has an **item ID**, and updates can be automated: see
-`.github/workflows/publish.yml`, which uploads and publishes on a version tag
-when four repository secrets are present. It is inert until then, so nothing
-happens by accident.
-
-To create those secrets:
-
-1. In a Google Cloud project, enable the **Chrome Web Store API** and create an
-   **OAuth client ID** of type *Desktop app*.
-2. Authorise it once against your developer account for the scope
-   `https://www.googleapis.com/auth/chromewebstore`, and keep the refresh token.
-3. Add `CWS_EXTENSION_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET` and
-   `CWS_REFRESH_TOKEN` to the repository's secrets.
-
-Google's own walkthrough for that flow is at
-<https://developer.chrome.com/docs/webstore/using-api>.
+Once the item exists it has an **item ID**, and updates are uploaded from this
+machine: `oss release` cuts the version, and `oss publish muscle-memory` uploads it to
+the store with the credentials in the keychain (item `cws-kaleve`, set up once
+for every extension, see oss-kit's `docs/chrome-web-store.md`). Nothing about
+the store lives in a GitHub secret or a workflow.
 
 ## Releasing
 
 ```sh
-git tag v1.0.0 && git push origin v1.0.0
+oss release muscle-memory --patch     # checks, provenance gate, version, tag, GitHub release
+oss publish muscle-memory             # the tagged version to the Chrome Web Store
 ```
 
-The provenance gate no longer runs on the tag. It asks GitHub code search
-whether anything distinctive in this release exists in somebody else's
-repository, and the useful moment for that is before the tag, while the answer
-can still change the release. A monthly sweep over every project catches the
-times it was forgotten:
-
-```sh
-oss provenance muscle-memory
-```
+`oss release` runs the provenance gate before it tags, while a match can still
+change what ships; the weekly fleet sweep catches anything that slipped past.

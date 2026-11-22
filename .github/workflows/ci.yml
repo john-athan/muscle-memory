@@ -1,5 +1,8 @@
 name: CI
 
+# A caller, never a container: each job runs one part of tools/validate.sh,
+# the same script that runs on the machine before a push.
+
 on:
   push:
     branches: [main]
@@ -8,69 +11,29 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Third-party actions are pinned to commit SHAs rather than tags. A tag is
 # mutable and `@stable` is a branch, so whoever controls that repository would
-# otherwise choose what runs in this one. Dependabot bumps SHA pins the same
-# way it bumps tags, so this costs nothing to maintain.
+# otherwise choose what runs in this one.
 jobs:
   extension:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26'
-
-      # Every file the extension loads, checked against what is on disk.
-      # A path renamed in src/ but not in the manifest, or a stylesheet the
-      # options page links and nobody ships, fails silently at load time and
-      # is the one break a user cannot diagnose. The earlier version of this
-      # step checked the content scripts only, which is how the CSS and the
-      # popup's script list went unguarded.
-      - name: Every referenced file exists
-        run: node scripts/check-assets.mjs
-
-      - name: Test
-        run: npm test
-
-      # Builds the store package and checks it against the store's own limits,
-      # so a rejection is found here rather than after a multi-day review.
-      - name: The package really contains what it claims
-        run: npm run package
+      - name: Validate
+        run: tools/validate.sh extension
 
   icons:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: tools/icons
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # Version comes from tools/icons/rust-toolchain.toml, which is pinned so
-      # that a codegen change cannot move a pixel and fail this job on an
-      # unrelated pull request.
+      # The version itself comes from tools/icons/rust-toolchain.toml.
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
-
-      - name: Format
-        run: cargo fmt --check
-
-      - name: Clippy
-        run: cargo clippy --locked -- -D warnings
-
-      - name: Icons in the tree match what the generator produces
-        # The PNGs are committed so that loading the extension needs no
-        # toolchain. That is only safe if they cannot drift from the source.
-        # --locked so the check is against pinned dependencies, and
-        # `git status` rather than `git diff` so a newly added size shows up
-        # as an untracked file instead of passing unnoticed.
-        run: |
-          cargo run --locked --release
-          cd "$GITHUB_WORKSPACE"
-          if [ -n "$(git status --porcelain -- icons)" ]; then
-            echo "The generator's output no longer matches the committed icons."
-            echo "If this followed a dependency or toolchain bump, regenerate,"
-            echo "check the icons still look right, and commit them."
-            git status --porcelain -- icons
-            exit 1
-          fi
+      - name: Validate
+        run: tools/validate.sh icons

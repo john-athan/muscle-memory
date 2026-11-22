@@ -13,8 +13,7 @@
   },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
-    "check": "node tools/webext.mjs validate && node scripts/check-assets.mjs && npm test",
-    "package": "node tools/webext.mjs package",
-    "check:icons": "cd tools/icons && cargo fmt --check && cargo clippy --locked -- -D warnings && cargo run --locked --release && cd ../.. && { [ -z \"$(git status --porcelain -- icons)\" ] || { echo 'the generator no longer matches the committed icons'; git status --porcelain -- icons; exit 1; }; }"
+    "check": "tools/validate.sh",
+    "package": "node tools/webext.mjs package"
   }
 }
