@@ -1,6 +1,12 @@
 <img src="docs/banner.svg" alt="Muscle Memory: Figma stops eating your browser's shortcuts." width="100%">
 
+# Muscle Memory
+
+**Figma stops eating your browser's shortcuts.** Hard reload, find, bookmark and print work in Figma again, and the Figma commands that lose a chord move to one you already know.
+
 [![CI](https://github.com/john-athan/muscle-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/john-athan/muscle-memory/actions/workflows/ci.yml)
+
+![The options page: every chord, and where it went](screenshots/store-2-keys.png)
 
 `⇧⌘R` in Figma is **Paste to Replace**. Press it meaning hard reload, with a
 slide selected, and Figma swaps that slide for whatever is on your clipboard.
